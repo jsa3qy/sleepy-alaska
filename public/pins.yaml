@@ -1,7 +1,7 @@
 # Map configuration
 map:
-  center: [64.2008, -149.4937]  # Fairbanks, Alaska
-  zoom: 6
+  center: [61.179649353027344, -149.83535766601562]  # Fairbanks, Alaska
+  zoom: 10
 
 # Pin categories for the legend
 categories:
@@ -9,10 +9,12 @@ categories:
     color: "#3498db"  # Blue
   - name: "Landmark"
     color: "#e74c3c"  # Red
-  - name: "Nature"
-    color: "#2ecc71"  # Green
   - name: "Point of Interest"
     color: "#f39c12"  # Orange
+  - name: "Hike"
+    color: "#2ecc71"  # Green
+  - name: "Eat/Drink"
+    color: "#ad27f5"
 
 # Pin definitions
 pins:
@@ -25,22 +27,22 @@ pins:
   - name: "Denali National Park"
     coordinates: [63.1148, -151.1926]
     description: "Home to North America's tallest peak"
-    category: "Nature"
+    category: "Point of Interest"
     link: "https://www.nps.gov/dena/index.htm"
 
-  - name: "Anchorage"
+  - name: "Anchorage Downtown"
     coordinates: [61.2181, -149.9003]
-    description: "Alaska's largest city"
+    description: "Alaska's largest city's Downtown! Don't get too excited ;)"
     category: "City"
     link: "https://en.wikipedia.org/wiki/Anchorage,_Alaska"
 
-  - name: "Northern Lights Viewing Point"
-    coordinates: [64.8519, -147.3500]
-    description: "Popular aurora viewing location"
-    category: "Point of Interest"
-
-  - name: "Trans-Alaska Pipeline"
-    coordinates: [65.1683, -147.4533]
-    description: "Engineering marvel spanning 800 miles"
+  - name: "Jesse's House"
+    coordinates: [61.179649353027344, -149.83535766601562]
+    description: "This is Jesse's house!"
     category: "Landmark"
-    link: "https://en.wikipedia.org/wiki/Trans-Alaska_Pipeline_System"
+
+  - name: "Xalos Burrito Express"
+    coordinates: [61.187538, -149.8695169]
+    description: "Fast casual mexican spot, local chain, my favorite in ANC"
+    category: "Eat/Drink"
+    link: "https://maps.app.goo.gl/SeHY1MkBapWwDk5u9"
