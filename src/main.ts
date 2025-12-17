@@ -37,7 +37,7 @@ interface MapConfig {
 }
 
 async function loadConfig(): Promise<MapConfig> {
-  const response = await fetch('/pins.yaml');
+  const response = await fetch('./pins.yaml');
   const text = await response.text();
   return yaml.load(text) as MapConfig;
 }
