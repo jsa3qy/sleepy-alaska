@@ -46,16 +46,13 @@ async function loadConfig(): Promise<MapConfig> {
 function createCustomIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="
-      background-color: ${color};
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [25, 25],
-    iconAnchor: [12, 12],
+    html: `<div class="marker-pin" style="--marker-color: ${color}">
+      <div class="marker-dot"></div>
+      <div class="marker-pulse"></div>
+    </div>`,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+    popupAnchor: [0, -42],
   });
 }
 

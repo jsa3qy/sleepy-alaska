@@ -187,3 +187,26 @@ pins:
     (vegetarian friendly)
   category: Eat/Drink
   maps_link: https://maps.app.goo.gl/wbFKr3vaoKDvJ7h8A
+- name: Pioneer Peak Trail
+  coordinates:
+  - 61.45563
+  - -148.99172
+  description: Really tough but beautiful hike, Can add in the second pioneer peak
+    if adventurous.
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/pioneer-peak-trail
+- name: Byron Glacier Trail
+  coordinates:
+  - 60.77378
+  - -148.84388
+  description: Talk to me about this, there's ice caves past the end of the marked
+    trail.
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/byron-glacier-trail
+- name: Kesugi Ridge Curry Ridge Trail
+  coordinates:
+  - 62.89162
+  - -149.74646
+  description: Would not recomend this tbh lol
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/kesugi-ridge-curry-ridge-trail
