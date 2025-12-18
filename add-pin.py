@@ -145,16 +145,23 @@ def fetch_alltrails_manual(url):
 def fetch_alltrails_data(url):
     """Fetch and parse AllTrails URL."""
 
+    # Convert regular AllTrails URL to widget URL (less restrictive)
+    # Example: https://www.alltrails.com/trail/us/alaska/flattop-mountain
+    # Becomes: https://www.alltrails.com/widget/trail/us/alaska/flattop-mountain
+    widget_url = url.replace('alltrails.com/trail/', 'alltrails.com/widget/trail/')
+
+    # If it's already a widget URL or doesn't match pattern, use as-is
+    if 'widget' not in widget_url:
+        widget_url = url
+
     try:
         req = urllib.request.Request(
-            url,
+            widget_url,
             headers={
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
+                'Referer': 'https://www.alltrails.com/'
             }
         )
         with urllib.request.urlopen(req) as response:
@@ -169,54 +176,105 @@ def fetch_alltrails_data(url):
     distance = None
     elevation_gain = None
 
-    # Extract trail name from title or meta tags
-    title_match = re.search(r'<title>([^<]+)</title>', html)
-    if title_match:
-        title = title_match.group(1)
-        # AllTrails titles are usually "Trail Name - State | AllTrails"
-        name = re.sub(r'\s*[-|].*$', '', title).strip()
+    # Extract trail name from multiple sources
+    # Try meta tags first (most reliable for widgets)
+    meta_title = re.search(r'<meta property="og:title" content="([^"]+)"', html)
+    if meta_title:
+        name = meta_title.group(1)
+        # Clean up: "Trail Name - State | AllTrails" -> "Trail Name"
+        name = re.sub(r'\s*[-|].*$', '', name).strip()
 
-    # Try to find coordinates in JSON-LD structured data
-    jsonld_match = re.search(r'<script type="application/ld\+json">([^<]+)</script>', html)
-    if jsonld_match:
-        try:
-            import json
-            data = json.loads(jsonld_match.group(1))
-            if isinstance(data, list):
-                data = data[0]
+    # Try page title as fallback
+    if not name:
+        title_match = re.search(r'<title>([^<]+)</title>', html)
+        if title_match:
+            title = title_match.group(1)
+            name = re.sub(r'\s*[-|].*$', '', title).strip()
 
-            # Look for geo coordinates
-            if 'geo' in data and isinstance(data['geo'], dict):
-                lat = data['geo'].get('latitude')
-                lng = data['geo'].get('longitude')
-                if lat and lng:
-                    coordinates = [float(lat), float(lng)]
-        except:
-            pass
+    # Try data attributes
+    if not name or name == 'AllTrails':
+        name_match = re.search(r'data-name="([^"]+)"', html)
+        if name_match:
+            name = name_match.group(1)
 
-    # Alternative: look for coordinates in meta tags or page data
-    if not coordinates:
-        coords_match = re.search(r'"lat":([^,]+),"lng":([^}]+)', html)
+    # Last resort: extract from URL
+    if not name or name == 'AllTrails':
+        url_name = url.rstrip('/').split('/')[-1]
+        name = url_name.replace('-', ' ').title()
+
+    # Pattern 2: Look for coordinates in various formats
+    coords_patterns = [
+        r'"lat":([0-9.-]+),"lng":([0-9.-]+)',
+        r'"latitude":([0-9.-]+),"longitude":([0-9.-]+)',
+        r'data-lat="([0-9.-]+)"\s+data-lng="([0-9.-]+)"',
+        r'center:\s*\[([0-9.-]+),\s*([0-9.-]+)\]',
+    ]
+
+    for pattern in coords_patterns:
+        coords_match = re.search(pattern, html)
         if coords_match:
             lat = float(coords_match.group(1))
             lng = float(coords_match.group(2))
             coordinates = [lat, lng]
+            break
 
-    # Extract distance/length
-    distance_match = re.search(r'"length":([0-9.]+)', html)
-    if distance_match:
-        # AllTrails stores distance in meters, convert to miles
-        meters = float(distance_match.group(1))
-        miles = meters * 0.000621371
-        distance = f"{miles:.1f} mi"
+    # Try to find coordinates in JSON-LD structured data
+    if not coordinates:
+        jsonld_match = re.search(r'<script type="application/ld\+json">([^<]+)</script>', html)
+        if jsonld_match:
+            try:
+                import json
+                data = json.loads(jsonld_match.group(1))
+                if isinstance(data, list):
+                    data = data[0]
 
-    # Extract elevation gain
-    elevation_match = re.search(r'"elevationGain":([0-9.]+)', html)
-    if elevation_match:
-        # AllTrails stores elevation in meters, convert to feet
-        meters = float(elevation_match.group(1))
-        feet = meters * 3.28084
-        elevation_gain = f"{int(feet)} ft"
+                # Look for geo coordinates
+                if 'geo' in data and isinstance(data['geo'], dict):
+                    lat = data['geo'].get('latitude')
+                    lng = data['geo'].get('longitude')
+                    if lat and lng:
+                        coordinates = [float(lat), float(lng)]
+            except:
+                pass
+
+    # Extract distance/length - try multiple patterns
+    distance_patterns = [
+        r'"length":([0-9.]+)',
+        r'data-length="([0-9.]+)"',
+        r'Length:\s*([0-9.]+)\s*mi',
+    ]
+
+    for pattern in distance_patterns:
+        distance_match = re.search(pattern, html)
+        if distance_match:
+            dist_val = float(distance_match.group(1))
+            # Check if it's already in miles or meters
+            if dist_val < 100:  # Likely already miles
+                distance = f"{dist_val:.1f} mi"
+            else:  # Likely meters
+                miles = dist_val * 0.000621371
+                distance = f"{miles:.1f} mi"
+            break
+
+    # Extract elevation gain - try multiple patterns
+    elevation_patterns = [
+        r'"elevationGain":([0-9.]+)',
+        r'data-elevation="([0-9.]+)"',
+        r'Elev\. Gain:\s*([0-9,]+)\s*ft',
+    ]
+
+    for pattern in elevation_patterns:
+        elevation_match = re.search(pattern, html)
+        if elevation_match:
+            elev_str = elevation_match.group(1).replace(',', '')
+            elev_val = float(elev_str)
+            # Check if it's already in feet or meters
+            if elev_val < 10000:  # Likely already feet
+                elevation_gain = f"{int(elev_val)} ft"
+            else:  # Likely meters
+                feet = elev_val * 3.28084
+                elevation_gain = f"{int(feet)} ft"
+            break
 
     # Build description
     description_parts = []

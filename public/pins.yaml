@@ -93,3 +93,31 @@ pins:
   description: Best breakfast burrito spot in ANC
   category: Eat/Drink
   maps_link: https://maps.app.goo.gl/BntiUsaZsNxahs7QA
+- name: Flattop Mountain
+  coordinates:
+  - 61.10304
+  - -149.68314
+  description: 2.8 mi • +399 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/flattop-mountain
+- name: Crow Pass Trail To Crystal Lake And Barnes Mountain
+  coordinates:
+  - 61.02823
+  - -149.11605
+  description: 5.5 mi • +586 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/crow-pass-trail-to-crystal-lake-and-barnes-mountain
+- name: Bird Ridge
+  coordinates:
+  - 60.97617
+  - -149.47593
+  description: 4.5 mi • +990 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/bird-ridge
+- name: Snowbird Glacier And Bomber Glacier Loop
+  coordinates:
+  - 61.80406
+  - -149.20285
+  description: 15.9 mi • +1763 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/snowbird-glacier-and-bomber-glacier-loop
