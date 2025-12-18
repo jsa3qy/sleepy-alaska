@@ -59,7 +59,11 @@ function createCustomIcon(color: string): L.DivIcon {
   });
 }
 
-function renderLegend(categories: Category[]): void {
+function renderLegend(
+  categories: Category[],
+  activeCategoriesSet: Set<string>,
+  onToggleCategory: (categoryName: string) => void
+): void {
   const legendEl = document.getElementById('legend')!;
 
   const title = document.createElement('h3');
@@ -69,6 +73,7 @@ function renderLegend(categories: Category[]): void {
   categories.forEach(category => {
     const item = document.createElement('div');
     item.className = 'legend-item';
+    item.dataset.category = category.name;
 
     const colorBox = document.createElement('div');
     colorBox.className = 'legend-color';
@@ -79,6 +84,19 @@ function renderLegend(categories: Category[]): void {
 
     item.appendChild(colorBox);
     item.appendChild(label);
+
+    // Add click handler
+    item.addEventListener('click', () => {
+      onToggleCategory(category.name);
+
+      // Toggle visual state
+      if (activeCategoriesSet.has(category.name)) {
+        item.classList.remove('inactive');
+      } else {
+        item.classList.add('inactive');
+      }
+    });
+
     legendEl.appendChild(item);
   });
 }
@@ -102,20 +120,29 @@ async function initMap(): Promise<void> {
       categoryColors.set(cat.name, cat.color);
     });
 
-    // Create marker cluster group
-    const markers = L.markerClusterGroup({
-      maxClusterRadius: 60,
+    // Track active categories (all active by default)
+    const activeCategories = new Set<string>(config.categories.map(c => c.name));
+
+    // Store all markers by category
+    const markersByCategory = new Map<string, { cluster: L.Marker; normal: L.Marker }[]>();
+    config.categories.forEach(cat => {
+      markersByCategory.set(cat.name, []);
+    });
+
+    // Create both clustered and non-clustered groups
+    const clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 40,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
     });
 
-    // Add pins to cluster group
+    const normalGroup = L.layerGroup();
+
+    // Create all markers and organize by category
     config.pins.forEach(pin => {
       const color = categoryColors.get(pin.category) || '#gray';
       const icon = createCustomIcon(color);
-
-      const marker = L.marker(pin.coordinates, { icon });
 
       // Create popup content
       let popupContent = `<strong>${pin.name}</strong><br>${pin.description}`;
@@ -132,17 +159,72 @@ async function initMap(): Promise<void> {
         popupContent += `<br>${links.join(' • ')}`;
       }
 
-      marker.bindPopup(popupContent);
+      // Create markers for both groups
+      const clusterMarker = L.marker(pin.coordinates, { icon });
+      clusterMarker.bindPopup(popupContent);
 
-      // Add marker to cluster group
-      markers.addLayer(marker);
+      const normalMarker = L.marker(pin.coordinates, { icon });
+      normalMarker.bindPopup(popupContent);
+
+      // Store markers by category
+      const categoryMarkers = markersByCategory.get(pin.category) || [];
+      categoryMarkers.push({ cluster: clusterMarker, normal: normalMarker });
+      markersByCategory.set(pin.category, categoryMarkers);
     });
 
-    // Add cluster group to map
-    map.addLayer(markers);
+    // Function to update visible markers based on active categories
+    function updateVisibleMarkers() {
+      // Clear both groups
+      clusterGroup.clearLayers();
+      normalGroup.clearLayers();
 
-    // Render legend
-    renderLegend(config.categories);
+      // Add markers from active categories
+      activeCategories.forEach(category => {
+        const markers = markersByCategory.get(category) || [];
+        markers.forEach(({ cluster, normal }) => {
+          clusterGroup.addLayer(cluster);
+          normalGroup.addLayer(normal);
+        });
+      });
+    }
+
+    // Initialize with all markers visible
+    updateVisibleMarkers();
+
+    // Start with clustering off (based on user's preference)
+    let clusteringEnabled = false;
+    map.addLayer(normalGroup);
+
+    // Toggle functionality
+    const toggleButton = document.getElementById('cluster-toggle')!;
+    const toggleSwitch = document.getElementById('toggle-switch')!;
+
+    toggleButton.addEventListener('click', () => {
+      clusteringEnabled = !clusteringEnabled;
+
+      if (clusteringEnabled) {
+        map.removeLayer(normalGroup);
+        map.addLayer(clusterGroup);
+        toggleSwitch.classList.add('active');
+      } else {
+        map.removeLayer(clusterGroup);
+        map.addLayer(normalGroup);
+        toggleSwitch.classList.remove('active');
+      }
+    });
+
+    // Category toggle handler
+    function toggleCategory(categoryName: string) {
+      if (activeCategories.has(categoryName)) {
+        activeCategories.delete(categoryName);
+      } else {
+        activeCategories.add(categoryName);
+      }
+      updateVisibleMarkers();
+    }
+
+    // Render legend with click handlers
+    renderLegend(config.categories, activeCategories, toggleCategory);
 
   } catch (error) {
     console.error('Failed to initialize map:', error);

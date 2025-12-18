@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Sleepy Alaska Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -34,6 +34,35 @@
       border: 1px solid rgba(0,0,0,0.06);
       z-index: 1000;
       max-width: 200px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .legend {
+        top: max(60px, env(safe-area-inset-top) + 10px);
+        right: max(10px, env(safe-area-inset-right) + 10px);
+        padding: 16px;
+        max-width: 160px;
+        max-height: calc(100vh - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      }
+
+      .legend h3 {
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+
+      .legend-item {
+        margin: 8px 0;
+        font-size: 12px;
+      }
+
+      .legend-color {
+        width: 10px;
+        height: 10px;
+        margin-right: 10px;
+      }
     }
 
     .legend h3 {
@@ -51,6 +80,25 @@
       margin: 10px 0;
       font-size: 13px;
       color: #333;
+      cursor: pointer;
+      padding: 4px 8px;
+      margin-left: -8px;
+      margin-right: -8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .legend-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .legend-item.inactive {
+      opacity: 0.3;
+    }
+
+    .legend-item.inactive:hover {
+      opacity: 0.5;
     }
 
     .legend-color {
@@ -58,8 +106,14 @@
       height: 12px;
       border-radius: 50%;
       margin-right: 12px;
-      border: none;
+      border: 2px solid transparent;
       flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .legend-item.inactive .legend-color {
+      border-color: #ccc;
+      background: transparent !important;
     }
 
     /* Minimalist pin markers */
@@ -198,11 +252,102 @@
       transform: scale(1.1);
       box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
     }
+
+    /* Cluster toggle button */
+    .cluster-toggle {
+      position: absolute;
+      bottom: 30px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      z-index: 1000;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 13px;
+      color: #333;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .cluster-toggle:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 6px 16px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    .cluster-toggle:active {
+      transform: translateY(0);
+    }
+
+    .toggle-switch {
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      background: #ccc;
+      border-radius: 10px;
+      position: relative;
+      margin-left: 10px;
+      vertical-align: middle;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #3498db;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle-switch.active::after {
+      left: 18px;
+    }
+
+    /* Mobile adjustments for toggle button */
+    @media (max-width: 768px) {
+      .cluster-toggle {
+        bottom: max(20px, env(safe-area-inset-bottom) + 10px);
+        right: max(10px, env(safe-area-inset-right) + 10px);
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+
+      .toggle-switch {
+        width: 32px;
+        height: 18px;
+      }
+
+      .toggle-switch::after {
+        width: 14px;
+        height: 14px;
+      }
+
+      .toggle-switch.active::after {
+        left: 16px;
+      }
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div class="legend" id="legend"></div>
+  <div class="cluster-toggle" id="cluster-toggle">
+    <span>Cluster pins</span>
+    <div class="toggle-switch" id="toggle-switch"></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
