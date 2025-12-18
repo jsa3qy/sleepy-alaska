@@ -18,3 +18,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+# URL lists (for batch pin processing)
+urls.txt
+*-urls.txt

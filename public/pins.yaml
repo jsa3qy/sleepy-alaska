@@ -97,27 +97,93 @@ pins:
   coordinates:
   - 61.10304
   - -149.68314
-  description: 2.8 mi • +399 ft elevation
+  description: 2.8 mi • +1309 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/flattop-mountain
 - name: Crow Pass Trail To Crystal Lake And Barnes Mountain
   coordinates:
   - 61.02823
   - -149.11605
-  description: 5.5 mi • +586 ft elevation
+  description: 5.5 mi • +1923 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/crow-pass-trail-to-crystal-lake-and-barnes-mountain
 - name: Bird Ridge
   coordinates:
   - 60.97617
   - -149.47593
-  description: 4.5 mi • +990 ft elevation
+  description: 4.5 mi • +3248 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/bird-ridge
 - name: Snowbird Glacier And Bomber Glacier Loop
   coordinates:
   - 61.80406
   - -149.20285
-  description: 15.9 mi • +1763 ft elevation
+  description: 15.9 mi • +5784 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/snowbird-glacier-and-bomber-glacier-loop
+- name: Black Cup Coffee · 341 E Benson Blvd, Anchorage, AK 99503
+  coordinates:
+  - 61.1939472
+  - -149.8783336
+  description: ★★★★★ · Coffee shop
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/NWUfJZj26N6CBjxS6
+- name: Refuge Coffee · 3309 Spenard Rd, Anchorage, AK 99503
+  coordinates:
+  - 61.1900522
+  - -149.9072535
+  description: ★★★★★ · Coffee shop
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/gAChYPRwhRzg9gnm8
+- name: Phở Lena · 3311 Spenard Rd, Anchorage, AK 99503
+  coordinates:
+  - 61.1899246
+  - -149.9074225
+  description: Favorite thai spot in town
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/zeeXtcVknYPJdtNG9
+- name: MISO Japanese sushi & bar · 1111E E Dimond Blvd, Anchorage, AK 99515
+  coordinates:
+  - 61.1449922
+  - -149.8612137
+  description: Best sushi!
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/M4TRQG1TcejFcua89
+- name: 'Seoul Casa - Korean Mexican Fusion · 601 E Dimond Blvd #6th, Anchorage, AK
+    99515'
+  coordinates:
+  - 61.14568
+  - -149.8692499
+  description: Mexican/Korean fusion, Guy Fieri went here lol
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/qgAFbuhj346NT8t9A
+- name: Yak & Yeti Cafe · 1360 W Northern Lights Blvd, Anchorage, AK 99507
+  coordinates:
+  - 61.1945897
+  - -149.908894
+  description: fast casual himalayan, great bang for buck, excellent bakery
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/y5ujbzYJogofqP6R8
+- name: Fire Island Rustic Bakeshop · 718 K St, Anchorage, AK 99501
+  coordinates:
+  - 61.2153029
+  - -149.9021429
+  description: famous high end bakery with attached espresso/plant shop
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/qaq8UawuZrQwhNFD6
+- name: 49th State Brewing - Anchorage · 717 W 3rd Ave, Anchorage, AK 99501
+  coordinates:
+  - 61.2196266
+  - -149.8959168
+  description: Famous brew pub with classic american food & beer, ice cream truck
+    and outdoor space available
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/sVjW8DaNpvdvAhpp6
+- name: Anchorage Pel'meni · 434 K St, Anchorage, AK 99501
+  coordinates:
+  - 61.2176378
+  - -149.9023662
+  description: Russian dumpling spot open late night, only serves two types of dumplings
+    (vegetarian friendly)
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/wbFKr3vaoKDvJ7h8A

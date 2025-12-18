@@ -238,42 +238,33 @@ def fetch_alltrails_data(url):
                 pass
 
     # Extract distance/length - try multiple patterns
+    # AllTrails stores distance in meters
     distance_patterns = [
         r'"length":([0-9.]+)',
         r'data-length="([0-9.]+)"',
-        r'Length:\s*([0-9.]+)\s*mi',
     ]
 
     for pattern in distance_patterns:
         distance_match = re.search(pattern, html)
         if distance_match:
-            dist_val = float(distance_match.group(1))
-            # Check if it's already in miles or meters
-            if dist_val < 100:  # Likely already miles
-                distance = f"{dist_val:.1f} mi"
-            else:  # Likely meters
-                miles = dist_val * 0.000621371
-                distance = f"{miles:.1f} mi"
+            meters = float(distance_match.group(1))
+            miles = meters * 0.000621371
+            distance = f"{miles:.1f} mi"
             break
 
     # Extract elevation gain - try multiple patterns
+    # AllTrails stores elevation in meters, always convert to feet
     elevation_patterns = [
         r'"elevationGain":([0-9.]+)',
         r'data-elevation="([0-9.]+)"',
-        r'Elev\. Gain:\s*([0-9,]+)\s*ft',
     ]
 
     for pattern in elevation_patterns:
         elevation_match = re.search(pattern, html)
         if elevation_match:
-            elev_str = elevation_match.group(1).replace(',', '')
-            elev_val = float(elev_str)
-            # Check if it's already in feet or meters
-            if elev_val < 10000:  # Likely already feet
-                elevation_gain = f"{int(elev_val)} ft"
-            else:  # Likely meters
-                feet = elev_val * 3.28084
-                elevation_gain = f"{int(feet)} ft"
+            meters = float(elevation_match.group(1))
+            feet = meters * 3.28084
+            elevation_gain = f"{int(feet)} ft"
             break
 
     # Build description
@@ -312,22 +303,31 @@ def fetch_google_maps_data(url):
         return None
 
     # Extract coordinates from URL
-    # Google Maps URLs have coordinates in format: @latitude,longitude,zoom
-    coords_match = re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', final_url)
+    # Priority 1: Actual place coordinates (3d=lat, 4d=lng format)
+    # This is the true location of the place, not just the map viewport
+    place_coords = re.search(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)', final_url)
 
-    # Alternative: coordinates in query params
-    if not coords_match:
-        coords_match = re.search(r'[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)', final_url)
-
-    if not coords_match:
-        # Try to extract from the HTML directly
-        coords_match = re.search(r'"center":\{"lat":(-?\d+\.\d+),"lng":(-?\d+\.\d+)}', html)
-
-    coordinates = None
-    if coords_match:
-        lat = float(coords_match.group(1))
-        lng = float(coords_match.group(2))
+    if place_coords:
+        lat = float(place_coords.group(1))
+        lng = float(place_coords.group(2))
         coordinates = [lat, lng]
+    else:
+        # Fallback: Map viewport center (@latitude,longitude,zoom)
+        coords_match = re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', final_url)
+
+        # Alternative: coordinates in query params
+        if not coords_match:
+            coords_match = re.search(r'[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)', final_url)
+
+        if not coords_match:
+            # Try to extract from the HTML directly
+            coords_match = re.search(r'"center":\{"lat":(-?\d+\.\d+),"lng":(-?\d+\.\d+)}', html)
+
+        coordinates = None
+        if coords_match:
+            lat = float(coords_match.group(1))
+            lng = float(coords_match.group(2))
+            coordinates = [lat, lng]
 
     # Parse HTML for metadata
     parser = MapsParser()
@@ -381,13 +381,8 @@ def infer_category(name, description, categories):
     return None
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python add-pin.py <url>")
-        print("  Supports: Google Maps, Apple Maps, or AllTrails URLs")
-        sys.exit(1)
-
-    url = sys.argv[1]
+def process_single_url(url, pins_data):
+    """Process a single URL and add it to the pins data."""
 
     # Detect which service
     service = detect_maps_service(url)
@@ -421,8 +416,7 @@ def main():
     print(f"Coordinates: {data['coordinates']}")
     print(f"Description: {data['description']}")
 
-    # Load existing pins.yaml
-    pins_data = load_pins_yaml()
+    # Get categories from existing pins data
     categories = pins_data.get('categories', [])
 
     # Handle AllTrails differently - category is pre-set
@@ -497,12 +491,83 @@ def main():
     # Add to pins list
     pins_data['pins'].append(new_pin)
 
-    # Save updated YAML
-    save_pins_yaml(pins_data)
-
-    print(f"\n✓ Successfully added '{data['name']}' to pins.yaml!")
+    print(f"✓ Successfully added '{data['name']}' to pins.yaml!")
     print(f"  Category: {category}")
     print(f"  Coordinates: {data['coordinates']}")
+
+    return True
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python add-pin.py <url-or-file>")
+        print("  Single URL: python add-pin.py <url>")
+        print("  Batch file: python add-pin.py urls.txt")
+        print("\nSupports: Google Maps, Apple Maps, or AllTrails URLs")
+        sys.exit(1)
+
+    input_arg = sys.argv[1]
+
+    # Check if input is a file
+    import os
+    if os.path.isfile(input_arg):
+        # Batch mode - process URLs from file
+        print(f"Batch mode: Reading URLs from {input_arg}\n")
+
+        with open(input_arg, 'r') as f:
+            urls = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+
+        if not urls:
+            print("Error: No URLs found in file")
+            sys.exit(1)
+
+        print(f"Found {len(urls)} URL(s) to process\n")
+
+        # Load pins.yaml once at the start
+        pins_data = load_pins_yaml()
+
+        success_count = 0
+        for i, url in enumerate(urls, 1):
+            print(f"\n{'='*60}")
+            print(f"Processing {i}/{len(urls)}: {url}")
+            print('='*60)
+
+            try:
+                if process_single_url(url, pins_data):
+                    success_count += 1
+            except KeyboardInterrupt:
+                print("\n\nBatch processing interrupted by user.")
+                print(f"Processed {success_count}/{i} URLs successfully.")
+
+                # Ask if they want to save what was added so far
+                save_response = input("\nSave pins added so far? (y/n): ").strip().lower()
+                if save_response == 'y':
+                    save_pins_yaml(pins_data)
+                    print(f"Saved {success_count} pin(s) to pins.yaml")
+                sys.exit(0)
+            except Exception as e:
+                print(f"\n✗ Error processing {url}: {e}")
+                continue_response = input("Continue to next URL? (y/n): ").strip().lower()
+                if continue_response != 'y':
+                    break
+
+        # Save all changes at the end
+        save_pins_yaml(pins_data)
+        print(f"\n{'='*60}")
+        print(f"Batch complete: {success_count}/{len(urls)} URLs processed successfully")
+        print(f"{'='*60}")
+
+    else:
+        # Single URL mode
+        url = input_arg
+
+        # Load pins.yaml
+        pins_data = load_pins_yaml()
+
+        # Process the single URL
+        if process_single_url(url, pins_data):
+            # Save updated YAML
+            save_pins_yaml(pins_data)
 
 
 if __name__ == '__main__':
