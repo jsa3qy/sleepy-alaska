@@ -1,6 +1,9 @@
 import L from 'leaflet';
 import * as yaml from 'js-yaml';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import 'leaflet.markercluster';
 
 // Fix for default marker icons in Leaflet with bundlers
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -99,12 +102,20 @@ async function initMap(): Promise<void> {
       categoryColors.set(cat.name, cat.color);
     });
 
-    // Add pins to map
+    // Create marker cluster group
+    const markers = L.markerClusterGroup({
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+    });
+
+    // Add pins to cluster group
     config.pins.forEach(pin => {
       const color = categoryColors.get(pin.category) || '#gray';
       const icon = createCustomIcon(color);
 
-      const marker = L.marker(pin.coordinates, { icon }).addTo(map);
+      const marker = L.marker(pin.coordinates, { icon });
 
       // Create popup content
       let popupContent = `<strong>${pin.name}</strong><br>${pin.description}`;
@@ -122,7 +133,13 @@ async function initMap(): Promise<void> {
       }
 
       marker.bindPopup(popupContent);
+
+      // Add marker to cluster group
+      markers.addLayer(marker);
     });
+
+    // Add cluster group to map
+    map.addLayer(markers);
 
     // Render legend
     renderLegend(config.categories);

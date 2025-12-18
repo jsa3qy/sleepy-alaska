@@ -163,6 +163,41 @@
       color: #2980b9;
       text-decoration: underline;
     }
+
+    /* Cluster styling - minimalist and sleek */
+    .marker-cluster-small,
+    .marker-cluster-medium,
+    .marker-cluster-large {
+      background-color: rgba(52, 152, 219, 0.15) !important;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .marker-cluster-small div,
+    .marker-cluster-medium div,
+    .marker-cluster-large div {
+      background-color: rgba(52, 152, 219, 0.9) !important;
+      color: white !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      width: 40px !important;
+      height: 40px !important;
+      margin-left: 5px !important;
+      margin-top: 5px !important;
+      line-height: 40px !important;
+      border-radius: 50% !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }
+
+    .marker-cluster {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .marker-cluster:hover div {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    }
   </style>
 </head>
 <body>

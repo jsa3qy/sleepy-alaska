@@ -210,3 +210,10 @@ pins:
   description: Would not recomend this tbh lol
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/kesugi-ridge-curry-ridge-trail
+- name: Alaska Wildlife Conservation Center · 43520 Seward Hwy, Girdwood, AK 99587
+  coordinates:
+  - 60.8212004
+  - -148.9792242
+  description: Like an outdoor native species Zoo. Top Tier, day pass ~$30
+  category: Point of Interest
+  maps_link: https://maps.app.goo.gl/EMTHBZu7Dv3UNUwX7
