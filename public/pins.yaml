@@ -1,48 +1,95 @@
-# Map configuration
 map:
-  center: [61.179649353027344, -149.83535766601562]  # Fairbanks, Alaska
+  center:
+  - 61.179649353027344
+  - -149.83535766601562
   zoom: 10
-
-# Pin categories for the legend
 categories:
-  - name: "City"
-    color: "#3498db"  # Blue
-  - name: "Landmark"
-    color: "#e74c3c"  # Red
-  - name: "Point of Interest"
-    color: "#f39c12"  # Orange
-  - name: "Hike"
-    color: "#2ecc71"  # Green
-  - name: "Eat/Drink"
-    color: "#ad27f5"
-
-# Pin definitions
+- name: City
+  color: '#3498db'
+- name: Landmark
+  color: '#e74c3c'
+- name: Point of Interest
+  color: '#f39c12'
+- name: Hike
+  color: '#2ecc71'
+- name: Eat/Drink
+  color: '#ad27f5'
 pins:
-  - name: "Fairbanks"
-    coordinates: [64.8378, -147.7164]
-    description: "The Golden Heart City"
-    category: "City"
-    link: "https://en.wikipedia.org/wiki/Fairbanks,_Alaska"
-
-  - name: "Denali National Park"
-    coordinates: [63.1148, -151.1926]
-    description: "Home to North America's tallest peak"
-    category: "Point of Interest"
-    link: "https://www.nps.gov/dena/index.htm"
-
-  - name: "Anchorage Downtown"
-    coordinates: [61.2181, -149.9003]
-    description: "Alaska's largest city's Downtown! Don't get too excited ;)"
-    category: "City"
-    link: "https://en.wikipedia.org/wiki/Anchorage,_Alaska"
-
-  - name: "Jesse's House"
-    coordinates: [61.179649353027344, -149.83535766601562]
-    description: "This is Jesse's house!"
-    category: "Landmark"
-
-  - name: "Xalos Burrito Express"
-    coordinates: [61.187538, -149.8695169]
-    description: "Fast casual mexican spot, local chain, my favorite in ANC"
-    category: "Eat/Drink"
-    link: "https://maps.app.goo.gl/SeHY1MkBapWwDk5u9"
+- name: Fairbanks
+  coordinates:
+  - 64.8378
+  - -147.7164
+  description: The Golden Heart City
+  category: City
+  link: https://en.wikipedia.org/wiki/Fairbanks,_Alaska
+- name: Denali National Park
+  coordinates:
+  - 63.1148
+  - -151.1926
+  description: Home to North America's tallest peak
+  category: Point of Interest
+  link: https://www.nps.gov/dena/index.htm
+  maps_link: https://maps.google.com/?q=63.1148,-151.1926
+- name: Anchorage Downtown
+  coordinates:
+  - 61.2181
+  - -149.9003
+  description: Alaska's largest city's Downtown! Don't get too excited ;)
+  category: City
+  link: https://en.wikipedia.org/wiki/Anchorage,_Alaska
+- name: Jesse's House
+  coordinates:
+  - 61.179649353027344
+  - -149.83535766601562
+  description: This is Jesse's house!
+  category: Landmark
+  maps_link: https://maps.app.goo.gl/ECK7NFuoDJDUnPWN8
+- name: Xalos Burrito Express
+  coordinates:
+  - 61.187538
+  - -149.8695169
+  description: Fast casual mexican spot, local chain, my favorite in ANC
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/SeHY1MkBapWwDk5u9
+- name: Alaska Rock Gym · 665 E 33rd Ave, Anchorage, AK 99503
+  coordinates:
+  - 61.1912903
+  - -149.8736623
+  description: The only climbing gym in Anchorage!
+  category: Point of Interest
+  maps_link: https://maps.app.goo.gl/w6HZ54rNwnVrkAnp7
+- name: Namaste Shangri-La
+  coordinates:
+  - 61.180332
+  - -149.835783
+  description: Best Nepalese/Indian in Anchorage
+  category: Eat/Drink
+  maps_link: https://maps.apple.com/?address=2446%20E%20Tudor%20Rd,%20Anchorage,%20AK%20%2099507,%20United%20States&auid=14821324659734767544&ll=61.180332,-149.835783&lsp=9902&q=Namaste%20Shangri-La&t=m
+- name: Golden Donuts
+  coordinates:
+  - 61.181149
+  - -149.839162
+  description: DONUTS, 24/7 (mostly)
+  category: Eat/Drink
+  maps_link: https://maps.apple.com/?address=2213%20E%20Tudor%20Rd,%20Anchorage,%20AK%20%2099507,%20United%20States&auid=5908962602420996174&ll=61.181149,-149.839162&lsp=9902&q=Golden%20Donuts&t=m
+- name: Mooses Tooth
+  coordinates:
+  - 61.190467
+  - -149.869094
+  description: Famous pizza spot, pretty touristy
+  category: Eat/Drink
+  maps_link: https://maps.apple.com/?address=3300%20Old%20Seward%20Hwy,%20Anchorage,%20AK%20%2099503,%20United%20States&auid=12496938357297284720&ll=61.190467,-149.869094&lsp=9902&q=Mooses%20Tooth&t=m
+- name: Wild Scoops
+  coordinates:
+  - 61.19253
+  - -149.874413
+  description: ice scream bb
+  category: Eat/Drink
+  maps_link: https://maps.apple.com/?address=530%20E%20Benson%20Blvd,%20Anchorage,%20AK%20%2099503,%20United%20States&auid=496192670806779280&ll=61.192530,-149.874413&lsp=9902&q=Wild%20Scoops&t=m
+- name: Espresso Expressions · 212 38th Pl, Anchorage, AK 99503
+  coordinates:
+  - 61.1861027
+  - -149.8853583
+  description: Best breakfast burrito spot in ANC
+  category: Eat/Drink
+  maps_link: https://maps.app.goo.gl/BntiUsaZsNxahs7QA

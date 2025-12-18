@@ -25,6 +25,7 @@ interface Pin {
   description: string;
   category: string;
   link?: string;
+  maps_link?: string;
 }
 
 interface MapConfig {
@@ -110,8 +111,17 @@ async function initMap(): Promise<void> {
 
       // Create popup content
       let popupContent = `<strong>${pin.name}</strong><br>${pin.description}`;
+
+      const links: string[] = [];
       if (pin.link) {
-        popupContent += `<br><a href="${pin.link}" target="_blank">Learn more</a>`;
+        links.push(`<a href="${pin.link}" target="_blank">Learn more</a>`);
+      }
+      if (pin.maps_link) {
+        links.push(`<a href="${pin.maps_link}" target="_blank">View on map</a>`);
+      }
+
+      if (links.length > 0) {
+        popupContent += `<br>${links.join(' • ')}`;
       }
 
       marker.bindPopup(popupContent);
