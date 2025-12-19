@@ -85,6 +85,11 @@ function renderLegend(
     item.appendChild(colorBox);
     item.appendChild(label);
 
+    // Set initial state
+    if (!activeCategoriesSet.has(category.name)) {
+      item.classList.add('inactive');
+    }
+
     // Add click handler
     item.addEventListener('click', () => {
       onToggleCategory(category.name);
@@ -120,8 +125,12 @@ async function initMap(): Promise<void> {
       categoryColors.set(cat.name, cat.color);
     });
 
-    // Track active categories (all active by default)
-    const activeCategories = new Set<string>(config.categories.map(c => c.name));
+    // Track active categories (all active by default except "Mountain Peak")
+    const activeCategories = new Set<string>(
+      config.categories
+        .filter(c => c.name !== 'Mountain Peak')
+        .map(c => c.name)
+    );
 
     // Store all markers by category
     const markersByCategory = new Map<string, { cluster: L.Marker; normal: L.Marker }[]>();

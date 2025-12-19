@@ -16,6 +16,8 @@ categories:
   color: '#e91e63'
 - name: Tourist Activity
   color: '#00bcd4'
+- name: Mountain Peak
+  color: '#000000'
 pins:
 - name: Fairbanks
   coordinates:
@@ -364,3 +366,157 @@ pins:
     anchorage
   category: City
   maps_link: https://maps.app.goo.gl/QeX46ZEnGLUzg3Mv9
+- name: Harding Ice Field Trail
+  coordinates:
+  - 60.18241
+  - -149.67043
+  description: 8.6 mi • +3234 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/harding-ice-field-trail
+- name: Anchorage Museum · 625 C St, Anchorage, AK 99501
+  coordinates:
+  - 61.2162281
+  - -149.8855791
+  description: super cool, esp on first Friday
+  category: Tourist Activity
+  maps_link: https://maps.app.goo.gl/MbzsGV18t5qCidWu9
+- name: Temptation Peak · Anchorage, AK 99577
+  coordinates:
+  - 61.1675
+  - -149.5230556
+  description: Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/oGf9rhxxymNuMU5FA
+- name: South Yuyanq' Ch'ex · Anchorage, AK 99540
+  coordinates:
+  - 61.029722
+  - -149.5747219
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/fq5JQfbyfWMidzjZ8
+- name: North Yuyanq' Ch'ex · Anchorage, AK
+  coordinates:
+  - 61.036667
+  - -149.560278
+  description: Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/cAaxPjqu8QJ4nCG57
+- name: Ptarmigan Peak · Anchorage, AK
+  coordinates:
+  - 61.0597222
+  - -149.6027778
+  description: ★★★★☆ · Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/q46J34o6YbKnWq6J7
+- name: O'Malley Peak · Anchorage, AK
+  coordinates:
+  - 61.1002778
+  - -149.5825001
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/Y5scLCRUVqqqQoS49
+- name: The Ramp · Anchorage, AK
+  coordinates:
+  - 61.09
+  - -149.5436112
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/PczYQ6987dUMKxLJA
+- name: Mt Williwaw · Anchorage, AK
+  coordinates:
+  - 61.1041667
+  - -149.5136111
+  description: Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/aPkfXnvHmm13FaaL6
+- name: Tanaina Peak · Anchorage, AK
+  coordinates:
+  - 61.1344444
+  - -149.5272222
+  description: Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/TRxx7UbWcxE4fQwC6
+- name: The Ramp · Anchorage, AK
+  coordinates:
+  - 61.09
+  - -149.5436112
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  maps_link: https://maps.app.goo.gl/mK5bzmxYASeYyhWD6
+- name: Koktoya Peak · Anchorage, AK
+  coordinates:
+  - 61.126826
+  - -149.500819
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  link: https://www.peakbagger.com/peak.aspx?pid=23682
+- name: Hidden Peak · Anchorage, AK
+  coordinates:
+  - 61.09655
+  - -149.563451
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  link: https://www.peakbagger.com/peak.aspx?pid=39291
+- name: Avalanche Mountain · Anchorage, AK
+  coordinates:
+  - 61.062263
+  - -149.525413
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  link: https://www.alaska.org/detail/avalanche-mountain
+- name: West Tanaina Peak · Anchorage, AK
+  coordinates:
+  - 61.136813
+  - -149.548826
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  link: https://www.peakbagger.com/peak.aspx?pid=44172
+- name: Tikishla Peak · Anchorage, AK
+  coordinates:
+  - 61.144
+  - -149.556
+  description: ★★★★★ · Mountain peak
+  category: Mountain Peak
+  link: https://www.summitpost.org/tikishla-peak/154831
+- name: Twin Peaks Trail
+  coordinates:
+  - 61.40947
+  - -149.13561
+  description: Pepper Peak!
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/twin-peaks-trail
+- name: Rabbit Lake Trail
+  coordinates:
+  - 61.08232
+  - -149.68219
+  description: Perfect Trail Run close to town
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/rabbit-lake-trail
+- name: Beluga Point · Mile 110 Seward Hwy, Anchorage, AK 99540
+  coordinates:
+  - 61.0067501
+  - -149.6943857
+  description: Great sunset spot, see Belugas only if you're really lucky
+  category: Point of Interest
+  maps_link: https://maps.app.goo.gl/QpQLJKFQ4Zayq7xb6
+- name: South Fork Valley Trail
+  coordinates:
+  - 61.23259
+  - -149.45608
+  description: Eagle and Symponyy  L Lakes
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/south-fork-valley-trail
+- name: Kincaid Park · 9401 Raspberry Rd, Anchorage, AK 99502
+  coordinates:
+  - 61.1536409
+  - -150.05538
+  description: Best inner city park, running, walking, skiing, biking
+  category: Point of Interest
+  maps_link: https://maps.app.goo.gl/zfonrxxVM3znHkfN6
+- name: Eklutna Lake · Anchorage, AK
+  coordinates:
+  - 61.3753858
+  - -149.0349587
+  description: unbelievable beaututiful lake
+  category: Point of Interest
+  maps_link: https://maps.app.goo.gl/QgAyz83mojtXFffG7
