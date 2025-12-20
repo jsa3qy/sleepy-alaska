@@ -480,14 +480,14 @@ pins:
   coordinates:
   - 61.40947
   - -149.13561
-  description: Pepper Peak!
+  description: 8.8 mi • +4524 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/twin-peaks-trail
 - name: Rabbit Lake Trail
   coordinates:
   - 61.08232
   - -149.68219
-  description: Perfect Trail Run close to town
+  description: 8.8 mi • +1555 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/rabbit-lake-trail
 - name: Beluga Point
@@ -501,7 +501,7 @@ pins:
   coordinates:
   - 61.23259
   - -149.45608
-  description: Eagle and Symponyy  L Lakes
+  description: 11.1 mi • +1528 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/south-fork-valley-trail
 - name: Kincaid Park
