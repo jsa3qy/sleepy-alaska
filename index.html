@@ -37,6 +37,13 @@
       max-width: 200px;
       max-height: calc(100vh - 120px);
       overflow-y: auto;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .legend.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(20px);
     }
 
     /* Mobile adjustments */
@@ -66,13 +73,42 @@
       }
     }
 
+    .legend-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
     .legend h3 {
-      margin: 0 0 10px 0;
+      margin: 0;
       font-size: 13px;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #666;
+    }
+
+    .legend-hide-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+
+    .legend-hide-btn:hover {
+      background: rgba(0,0,0,0.04);
+      color: #333;
     }
 
     .legend-item {
@@ -557,13 +593,49 @@
       transform: translateY(0);
     }
 
+    /* Show legend button (appears when legend is hidden) */
+    .show-legend-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      z-index: 1000;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 12px;
+      color: #333;
+      user-select: none;
+      transition: all 0.2s ease;
+      display: none;
+      border: none;
+    }
+
+    .show-legend-btn.visible {
+      display: block;
+    }
+
+    .show-legend-btn:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 6px 16px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    .show-legend-btn:active {
+      transform: translateY(0);
+    }
+
     /* Mobile adjustments for side panel */
     @media (max-width: 768px) {
       .side-panel {
         width: 100%;
-        height: 65vh;
+        height: 50vh;
         top: auto;
-        bottom: -65vh;
+        bottom: -50vh;
         right: 0;
         transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: 16px 16px 0 0;
@@ -609,7 +681,17 @@
       }
 
       #map.panel-open {
-        height: 35vh;
+        height: 50vh;
+      }
+
+      /* Show hide button on legend when panel is open on mobile */
+      .side-panel.open ~ .legend .legend-hide-btn {
+        display: flex;
+      }
+
+      .show-legend-btn {
+        top: max(16px, env(safe-area-inset-top) + 10px);
+        right: max(10px, env(safe-area-inset-right) + 10px);
       }
     }
 
@@ -633,6 +715,7 @@
     </div>
   </div>
   <div class="legend" id="legend"></div>
+  <button class="show-legend-btn" id="show-legend-btn">Show Legend</button>
   <div class="cluster-toggle" id="cluster-toggle">
     <span>Cluster pins</span>
     <div class="toggle-switch" id="toggle-switch"></div>

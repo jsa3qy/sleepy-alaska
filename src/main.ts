@@ -70,9 +70,21 @@ function renderLegend(
 ): void {
   const legendEl = document.getElementById('legend')!;
 
+  // Create legend header with hide button
+  const header = document.createElement('div');
+  header.className = 'legend-header';
+
   const title = document.createElement('h3');
   title.textContent = 'Legend';
-  legendEl.appendChild(title);
+
+  const hideBtn = document.createElement('button');
+  hideBtn.className = 'legend-hide-btn';
+  hideBtn.innerHTML = '&times;';
+  hideBtn.id = 'legend-hide-btn';
+
+  header.appendChild(title);
+  header.appendChild(hideBtn);
+  legendEl.appendChild(header);
 
   categories.forEach(category => {
     const item = document.createElement('div');
@@ -357,6 +369,21 @@ async function initMap(): Promise<void> {
 
     // Render legend with click handlers
     renderLegend(config.categories, activeCategories, toggleCategory);
+
+    // Legend hide/show functionality
+    const legendElement = document.getElementById('legend')!;
+    const legendHideBtn = document.getElementById('legend-hide-btn')!;
+    const showLegendBtn = document.getElementById('show-legend-btn')!;
+
+    legendHideBtn.addEventListener('click', () => {
+      legendElement.classList.add('hidden');
+      showLegendBtn.classList.add('visible');
+    });
+
+    showLegendBtn.addEventListener('click', () => {
+      legendElement.classList.remove('hidden');
+      showLegendBtn.classList.remove('visible');
+    });
 
     // Panel toggle button
     panelToggle.addEventListener('click', () => {
