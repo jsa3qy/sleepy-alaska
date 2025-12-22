@@ -55,7 +55,7 @@ pins:
   description: Fast casual mexican spot, local chain, my favorite in ANC
   category: Eat
   maps_link: https://maps.app.goo.gl/SeHY1MkBapWwDk5u9
-- name: Alaska Rock Gym 
+- name: Alaska Rock Gym
   coordinates:
   - 61.1912903
   - -149.8736623
@@ -125,57 +125,56 @@ pins:
   description: 15.9 mi • +5784 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/snowbird-glacier-and-bomber-glacier-loop
-- name: Black Cup Coffee 
+- name: Black Cup Coffee
   coordinates:
   - 61.1939472
   - -149.8783336
   description: ★★★★★ · Coffee shop
   category: Drink
   maps_link: https://maps.app.goo.gl/NWUfJZj26N6CBjxS6
-- name: Refuge Coffee 
+- name: Refuge Coffee
   coordinates:
   - 61.1900522
   - -149.9072535
   description: ★★★★★ · Coffee shop
   category: Drink
   maps_link: https://maps.app.goo.gl/gAChYPRwhRzg9gnm8
-- name: Phở Lena 
+- name: Phở Lena
   coordinates:
   - 61.1899246
   - -149.9074225
   description: Favorite thai spot in town
   category: Eat
   maps_link: https://maps.app.goo.gl/zeeXtcVknYPJdtNG9
-- name: MISO Japanese sushi & bar 
+- name: MISO Japanese sushi & bar
   coordinates:
   - 61.1449922
   - -149.8612137
   description: Best sushi!
   category: Eat
   maps_link: https://maps.app.goo.gl/M4TRQG1TcejFcua89
-- name: 'Seoul Casa - Korean Mexican Fusion 
-    99515'
+- name: Seoul Casa - Korean Mexican Fusion 99515
   coordinates:
   - 61.14568
   - -149.8692499
   description: Mexican/Korean fusion, Guy Fieri went here lol
   category: Eat
   maps_link: https://maps.app.goo.gl/qgAFbuhj346NT8t9A
-- name: Yak & Yeti Cafe 
+- name: Yak & Yeti Cafe
   coordinates:
   - 61.1945897
   - -149.908894
   description: fast casual himalayan, great bang for buck, excellent bakery
   category: Eat
   maps_link: https://maps.app.goo.gl/y5ujbzYJogofqP6R8
-- name: Fire Island Rustic Bakeshop 
+- name: Fire Island Rustic Bakeshop
   coordinates:
   - 61.2153029
   - -149.9021429
   description: famous high end bakery with attached espresso/plant shop
   category: Eat
   maps_link: https://maps.app.goo.gl/qaq8UawuZrQwhNFD6
-- name: 49th State Brewing - Anchorage 
+- name: 49th State Brewing - Anchorage
   coordinates:
   - 61.2196266
   - -149.8959168
@@ -183,7 +182,7 @@ pins:
     and outdoor space available
   category: Eat
   maps_link: https://maps.app.goo.gl/sVjW8DaNpvdvAhpp6
-- name: Anchorage Pel'meni 
+- name: Anchorage Pel'meni
   coordinates:
   - 61.2176378
   - -149.9023662
@@ -212,14 +211,14 @@ pins:
   description: 30.5 mi • +5980 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/kesugi-ridge-curry-ridge-trail
-- name: Alaska Wildlife Conservation Center 
+- name: Alaska Wildlife Conservation Center
   coordinates:
   - 60.8212004
   - -148.9792242
   description: Like an outdoor native species Zoo. Top Tier, day pass ~$30
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/EMTHBZu7Dv3UNUwX7
-- name: Talkeetna 
+- name: Talkeetna
   coordinates:
   - 62.3209046
   - -150.1066221
@@ -227,14 +226,14 @@ pins:
     for climbing
   category: City
   maps_link: https://maps.app.goo.gl/tKgnKKVmqZsoLacZ9
-- name: K2 Aviation 
+- name: K2 Aviation
   coordinates:
   - 62.3211962
   - -150.1032689
   description: Flight Tour pAir Taxi
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/X9NHNRbDiuXsBLBr6
-- name: Flow AK Rafting 
+- name: Flow AK Rafting
   coordinates:
   - 60.9176224
   - -149.6397566
@@ -242,14 +241,14 @@ pins:
     in the world
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/jxaVM4MekMZZX28Q8
-- name: Hope 
+- name: Hope
   coordinates:
   - 60.918305
   - -149.6453896
   description: small nothing town with lots of music!
   category: City
   maps_link: https://maps.app.goo.gl/J4vNVnK7rgCUv5dm8
-- name: Homer 
+- name: Homer
   coordinates:
   - 59.6480855
   - -151.5299245
@@ -257,35 +256,35 @@ pins:
     Penninsula
   category: City
   maps_link: https://maps.app.goo.gl/q8WiF1EkWF6xb1yW8
-- name: Seward 
+- name: Seward
   coordinates:
   - 60.1047739
   - -149.4421038
   description: Port town with water access to Kenai Fjords National Park
   category: City
   maps_link: https://maps.app.goo.gl/MkV4t6NoDmYgtv4i7
-- name: Firebrand BBQ 
+- name: Firebrand BBQ
   coordinates:
   - 60.1140479
   - -149.4425173
   description: Great bbq stand
   category: Eat
   maps_link: https://maps.app.goo.gl/2Cheww1dV6bzArXr5
-- name: Kayak Adventures Worldwide 
+- name: Kayak Adventures Worldwide
   coordinates:
   - 60.1042139
   - -149.441802
   description: Sea Kayaking ooutfitter!
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/Q1EB17hsQfgygg6x7
-- name: Alaska SeaLife Center 
+- name: Alaska SeaLife Center
   coordinates:
   - 60.0998464
   - -149.4407077
   description: Cool native sea life center. Kinda like a cooler aquarium
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/4sZNZ251nFwP7VL29
-- name: Whittier 
+- name: Whittier
   coordinates:
   - 60.7745903
   - -148.6858407
@@ -293,70 +292,70 @@ pins:
     to train to Anchorage'
   category: City
   maps_link: https://maps.app.goo.gl/Nj89JEUncnUCTJes7
-- name: Anton Anderson Memorial Tunnel 
+- name: Anton Anderson Memorial Tunnel
   coordinates:
   - 60.7840533
   - -148.7681361
   description: longest tunnel in north america, one way, it's how you get to whittier
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/P2UBsZ4uZDs5gxrJ6
-- name: Glacier JetSki Adventures 
+- name: Glacier JetSki Adventures
   coordinates:
   - 60.7727546
   - -148.6845856
   description: Jet Ski Galcier Tour outfitter!
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/FAgMULbxaesf3ASL7
-- name: Girdwood 
+- name: Girdwood
   coordinates:
   - 60.9543247
   - -149.1598983
   description: City that supports the Alyeska Ski Resort
   category: City
   maps_link: https://maps.app.goo.gl/KRMe91xqvfB1mKjw6
-- name: Alyeska Resort 
+- name: Alyeska Resort
   coordinates:
   - 60.9620941
   - -149.0864517
   description: biggest ski resort in AK
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/xPAJY5bEjUHCggXA8
-- name: Alyeska Nordic Spa 
+- name: Alyeska Nordic Spa
   coordinates:
   - 60.9706743
   - -149.0959696
   description: Nordic Spa next to Alyeska
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/eF3gQqoXb1Jf2NZcA
-- name: Anchorage Brewing Company 
+- name: Anchorage Brewing Company
   coordinates:
   - 61.1385403
   - -149.8816419
   description: best bear in ANC
   category: Drink
   maps_link: https://maps.app.goo.gl/3SecEUBasRaxd82T7
-- name: King Street Brewing Company 
+- name: King Street Brewing Company
   coordinates:
   - 61.1391388
   - -149.8803778
   description: the other brewery next to ABC lol, not as vibey but good for big groups
   category: Drink
   maps_link: https://maps.app.goo.gl/6L6xTRTTUcQAUM4P9
-- name: Hive Mind Meadery 
+- name: Hive Mind Meadery
   coordinates:
   - 61.1684836
   - -149.893939
   description: ★★★★★ · Winery
   category: Drink
   maps_link: https://maps.app.goo.gl/mEzVkRC2GNZtAWkbA
-- name: Double Shovel Cider Company 
+- name: Double Shovel Cider Company
   coordinates:
   - 61.1686808
   - -149.891563
   description: ★★★★★ · Cider bar
   category: Drink
   maps_link: https://maps.app.goo.gl/ZFsVz1mhzx82TvHK9
-- name: Eagle River 
+- name: Eagle River
   coordinates:
   - 61.3293186
   - -149.56805
@@ -371,105 +370,105 @@ pins:
   description: 8.6 mi • +3234 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/harding-ice-field-trail
-- name: Anchorage Museum 
+- name: Anchorage Museum
   coordinates:
   - 61.2162281
   - -149.8855791
   description: super cool, esp on first Friday
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/MbzsGV18t5qCidWu9
-- name: Temptation Peak 
+- name: Temptation Peak
   coordinates:
   - 61.1675
   - -149.5230556
   description: Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/oGf9rhxxymNuMU5FA
-- name: South Yuyanq' Ch'ex 
+- name: South Yuyanq' Ch'ex
   coordinates:
   - 61.029722
   - -149.5747219
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/fq5JQfbyfWMidzjZ8
-- name: North Yuyanq' Ch'ex 
+- name: North Yuyanq' Ch'ex
   coordinates:
   - 61.036667
   - -149.560278
   description: Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/cAaxPjqu8QJ4nCG57
-- name: Ptarmigan Peak 
+- name: Ptarmigan Peak
   coordinates:
   - 61.0597222
   - -149.6027778
   description: ★★★★☆ · Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/q46J34o6YbKnWq6J7
-- name: O'Malley Peak 
+- name: O'Malley Peak
   coordinates:
   - 61.1002778
   - -149.5825001
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/Y5scLCRUVqqqQoS49
-- name: The Ramp 
+- name: The Ramp
   coordinates:
   - 61.09
   - -149.5436112
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/PczYQ6987dUMKxLJA
-- name: Mt Williwaw 
+- name: Mt Williwaw
   coordinates:
   - 61.1041667
   - -149.5136111
   description: Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/aPkfXnvHmm13FaaL6
-- name: Tanaina Peak 
+- name: Tanaina Peak
   coordinates:
   - 61.1344444
   - -149.5272222
   description: Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/TRxx7UbWcxE4fQwC6
-- name: The Ramp 
+- name: The Ramp
   coordinates:
   - 61.09
   - -149.5436112
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   maps_link: https://maps.app.goo.gl/mK5bzmxYASeYyhWD6
-- name: Koktoya Peak 
+- name: Koktoya Peak
   coordinates:
   - 61.126826
   - -149.500819
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   link: https://www.peakbagger.com/peak.aspx?pid=23682
-- name: Hidden Peak 
+- name: Hidden Peak
   coordinates:
   - 61.09655
   - -149.563451
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   link: https://www.peakbagger.com/peak.aspx?pid=39291
-- name: Avalanche Mountain 
+- name: Avalanche Mountain
   coordinates:
   - 61.062263
   - -149.525413
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   link: https://www.alaska.org/detail/avalanche-mountain
-- name: West Tanaina Peak 
+- name: West Tanaina Peak
   coordinates:
   - 61.136813
   - -149.548826
   description: ★★★★★ · Mountain peak
   category: Mountain Peak
   link: https://www.peakbagger.com/peak.aspx?pid=44172
-- name: Tikishla Peak 
+- name: Tikishla Peak
   coordinates:
   - 61.144
   - -149.556
@@ -534,3 +533,10 @@ pins:
     companies that operate off of the spit here.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/dVMbUz853wp1UKWH8
+- name: El Green-Go's · 390 L St, Anchorage, AK 99501
+  coordinates:
+  - 61.218465
+  - -149.9044317
+  description: summer only burrito spot, top tier bbq meats
+  category: Eat
+  maps_link: https://maps.app.goo.gl/n6ffzZfnRu8THpDZA

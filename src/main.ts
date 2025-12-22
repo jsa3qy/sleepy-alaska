@@ -126,8 +126,11 @@ async function initMap(): Promise<void> {
   try {
     const config = await loadConfig();
 
-    // Initialize map
-    const map = L.map('map').setView(config.map.center, config.map.zoom);
+    // Initialize map with double-tap zoom enabled for mobile
+    const map = L.map('map', {
+      doubleClickZoom: true,
+      tapTolerance: 15
+    }).setView(config.map.center, config.map.zoom);
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
