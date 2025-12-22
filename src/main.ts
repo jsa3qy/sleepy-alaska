@@ -371,19 +371,21 @@ async function initMap(): Promise<void> {
         renderSidePanel(); // Refresh content
       }
 
-      // Invalidate map size after transition
+      // Invalidate map size after transition completes
       setTimeout(() => {
         map.invalidateSize();
-      }, 300);
+      }, 350);
     });
 
     // Panel close button
     panelClose.addEventListener('click', () => {
       sidePanel.classList.remove('open');
       mapElement.classList.remove('panel-open');
+
+      // Invalidate map size after transition completes
       setTimeout(() => {
         map.invalidateSize();
-      }, 300);
+      }, 350);
     });
 
     // Highlight card when marker is clicked
