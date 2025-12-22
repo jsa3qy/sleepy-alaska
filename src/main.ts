@@ -29,6 +29,10 @@ interface Pin {
   category: string;
   link?: string;
   maps_link?: string;
+  extended_description?: string;
+  cost?: string;
+  tips?: string;
+  photos?: string[];
 }
 
 interface MapConfig {
@@ -222,6 +226,124 @@ async function initMap(): Promise<void> {
       }
     });
 
+    // Side panel functionality
+    const sidePanel = document.getElementById('side-panel')!;
+    const panelContent = document.getElementById('panel-content')!;
+    const panelToggle = document.getElementById('panel-toggle')!;
+    const panelClose = document.getElementById('panel-close')!;
+    const mapElement = document.getElementById('map')!;
+
+    // Store markers with their data for later reference
+    const markerDataMap = new Map<L.Marker, Pin>();
+
+    // Populate marker data mapping first
+    config.pins.forEach(pin => {
+      const markers = markersByCategory.get(pin.category) || [];
+      markers.forEach(markerPair => {
+        markerDataMap.set(markerPair.cluster, pin);
+        markerDataMap.set(markerPair.normal, pin);
+      });
+    });
+
+    // Populate side panel with location cards
+    function renderSidePanel() {
+      panelContent.innerHTML = '';
+
+      config.pins.forEach((pin) => {
+        // Skip if category is not active
+        if (!activeCategories.has(pin.category)) return;
+
+        const card = document.createElement('div');
+        card.className = 'location-card';
+        card.dataset.pinName = pin.name;
+
+        const color = categoryColors.get(pin.category) || '#gray';
+
+        let cardHTML = `
+          <div class="card-header">
+            <div class="card-category-dot" style="background-color: ${color}"></div>
+            <div class="card-title">
+              <h3>${pin.name}</h3>
+              <div class="card-category-name">${pin.category}</div>
+            </div>
+          </div>
+          <div class="card-description">${pin.description}</div>
+        `;
+
+        if (pin.extended_description) {
+          cardHTML += `<div class="card-extended">${pin.extended_description}</div>`;
+        }
+
+        if (pin.cost || pin.tips) {
+          cardHTML += '<div class="card-meta">';
+          if (pin.cost) {
+            cardHTML += `<div class="card-meta-item"><span class="card-meta-label">Cost:</span> ${pin.cost}</div>`;
+          }
+          if (pin.tips) {
+            cardHTML += `<div class="card-meta-item"><span class="card-meta-label">Tips:</span> ${pin.tips}</div>`;
+          }
+          cardHTML += '</div>';
+        }
+
+        cardHTML += '<div class="card-actions">';
+        cardHTML += '<button class="card-button card-button-primary view-on-map-btn">View on Map</button>';
+        if (pin.link) {
+          cardHTML += `<a href="${pin.link}" target="_blank" class="card-button card-button-secondary">Learn More</a>`;
+        }
+        if (pin.maps_link) {
+          cardHTML += `<a href="${pin.maps_link}" target="_blank" class="card-button card-button-secondary">Directions</a>`;
+        }
+        cardHTML += '</div>';
+
+        card.innerHTML = cardHTML;
+
+        // Click handler for "View on Map" button
+        const viewOnMapBtn = card.querySelector('.view-on-map-btn') as HTMLButtonElement;
+        viewOnMapBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+
+          // Find the marker for this pin by matching coordinates
+          const markers = markersByCategory.get(pin.category) || [];
+          const markerPair = markers.find(m => {
+            const markerLatLng = m.normal.getLatLng();
+            return markerLatLng.lat === pin.coordinates[0] && markerLatLng.lng === pin.coordinates[1];
+          });
+
+          if (markerPair) {
+            const marker = clusteringEnabled ? markerPair.cluster : markerPair.normal;
+
+            // Zoom to marker location with smooth animation
+            map.flyTo(pin.coordinates, 12, {
+              duration: 1.2,
+              easeLinearity: 0.25
+            });
+
+            // Open popup after animation starts
+            setTimeout(() => {
+              marker.openPopup();
+            }, 600);
+
+            // Highlight card
+            document.querySelectorAll('.location-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+          } else {
+            console.error('Could not find marker for pin:', pin.name);
+          }
+        });
+
+        // Click handler for entire card
+        card.addEventListener('click', () => {
+          const viewEvent = new MouseEvent('click', { bubbles: true });
+          viewOnMapBtn.dispatchEvent(viewEvent);
+        });
+
+        panelContent.appendChild(card);
+      });
+    }
+
+    // Initial render
+    renderSidePanel();
+
     // Category toggle handler
     function toggleCategory(categoryName: string) {
       if (activeCategories.has(categoryName)) {
@@ -230,10 +352,63 @@ async function initMap(): Promise<void> {
         activeCategories.add(categoryName);
       }
       updateVisibleMarkers();
+      renderSidePanel(); // Update side panel when categories change
     }
 
     // Render legend with click handlers
     renderLegend(config.categories, activeCategories, toggleCategory);
+
+    // Panel toggle button
+    panelToggle.addEventListener('click', () => {
+      const isOpen = sidePanel.classList.contains('open');
+
+      if (isOpen) {
+        sidePanel.classList.remove('open');
+        mapElement.classList.remove('panel-open');
+      } else {
+        sidePanel.classList.add('open');
+        mapElement.classList.add('panel-open');
+        renderSidePanel(); // Refresh content
+      }
+
+      // Invalidate map size after transition
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 300);
+    });
+
+    // Panel close button
+    panelClose.addEventListener('click', () => {
+      sidePanel.classList.remove('open');
+      mapElement.classList.remove('panel-open');
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 300);
+    });
+
+    // Highlight card when marker is clicked
+    map.on('popupopen', (e: L.PopupEvent) => {
+      const markerLatLng = e.popup.getLatLng();
+      if (!markerLatLng) return;
+
+      // Find which pin this is
+      const pin = config.pins.find(p =>
+        p.coordinates[0] === markerLatLng.lat && p.coordinates[1] === markerLatLng.lng
+      );
+
+      if (pin) {
+        // Highlight corresponding card
+        document.querySelectorAll('.location-card').forEach(c => c.classList.remove('active'));
+        const card = document.querySelector(`.location-card[data-pin-name="${pin.name}"]`);
+        if (card) {
+          card.classList.add('active');
+          // Scroll card into view if panel is open
+          if (sidePanel.classList.contains('open')) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+    });
 
   } catch (error) {
     console.error('Failed to initialize map:', error);
