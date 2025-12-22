@@ -388,14 +388,27 @@ async function initMap(): Promise<void> {
     // Panel toggle button
     panelToggle.addEventListener('click', () => {
       const isOpen = sidePanel.classList.contains('open');
+      const isMobile = window.innerWidth <= 768;
 
       if (isOpen) {
         sidePanel.classList.remove('open');
         mapElement.classList.remove('panel-open');
+
+        // Show legend when panel closes on mobile
+        if (isMobile) {
+          legendElement.classList.remove('hidden');
+          showLegendBtn.classList.remove('visible');
+        }
       } else {
         sidePanel.classList.add('open');
         mapElement.classList.add('panel-open');
         renderSidePanel(); // Refresh content
+
+        // Hide legend by default when panel opens on mobile
+        if (isMobile) {
+          legendElement.classList.add('hidden');
+          showLegendBtn.classList.add('visible');
+        }
       }
 
       // Invalidate map size after transition completes
@@ -406,8 +419,16 @@ async function initMap(): Promise<void> {
 
     // Panel close button
     panelClose.addEventListener('click', () => {
+      const isMobile = window.innerWidth <= 768;
+
       sidePanel.classList.remove('open');
       mapElement.classList.remove('panel-open');
+
+      // Show legend when panel closes on mobile
+      if (isMobile) {
+        legendElement.classList.remove('hidden');
+        showLegendBtn.classList.remove('visible');
+      }
 
       // Invalidate map size after transition completes
       setTimeout(() => {
