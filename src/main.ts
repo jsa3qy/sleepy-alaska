@@ -4,6 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
+import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
 // Fix for default marker icons in Leaflet with bundlers
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -210,6 +212,10 @@ async function initMap(): Promise<void> {
     let currentMinElevation = 0;
     let currentMaxElevation = 10000;
     let preHikeModeCategories: Set<string> | null = null;
+
+    // Routing state
+    let routingControl: L.Routing.Control | null = null;
+    let selectedStartPin: Pin | null = null;
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
@@ -745,6 +751,100 @@ async function initMap(): Promise<void> {
       setTimeout(() => {
         map.invalidateSize();
       }, 350);
+    });
+
+    // Routing functionality
+    const routeBanner = document.getElementById('route-banner')!;
+    const routeInfo = document.getElementById('route-info')!;
+    const routeClearBtn = document.getElementById('route-clear-btn')!;
+
+    function clearRoute() {
+      if (routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+      }
+      selectedStartPin = null;
+      routeBanner.classList.remove('visible');
+    }
+
+    function createRoute(start: Pin, end: Pin) {
+      // Clear existing route
+      clearRoute();
+
+      // Create routing control
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(start.coordinates[0], start.coordinates[1]),
+          L.latLng(end.coordinates[0], end.coordinates[1])
+        ],
+        router: L.Routing.osrmv1({
+          serviceUrl: 'https://router.project-osrm.org/route/v1'
+        }),
+        show: false, // Hide the default instructions panel
+        addWaypoints: false,
+        routeWhileDragging: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+          styles: [{ color: '#3498db', weight: 4, opacity: 0.7 }],
+          extendToWaypoints: true,
+          missingRouteTolerance: 0
+        }
+      }).addTo(map);
+
+      // Listen for route found event
+      routingControl.on('routesfound', (e: any) => {
+        const routes = e.routes;
+        if (routes && routes.length > 0) {
+          const route = routes[0];
+          const distanceMiles = (route.summary.totalDistance / 1609.34).toFixed(1);
+          const timeMinutes = Math.round(route.summary.totalTime / 60);
+          const hours = Math.floor(timeMinutes / 60);
+          const mins = timeMinutes % 60;
+
+          let timeStr = '';
+          if (hours > 0) {
+            timeStr = `${hours}h ${mins}min`;
+          } else {
+            timeStr = `${mins}min`;
+          }
+
+          routeInfo.innerHTML = `<strong>${start.name}</strong> → <strong>${end.name}</strong> • ${distanceMiles} mi • ${timeStr} drive`;
+          routeBanner.classList.add('visible');
+        }
+      });
+
+      // Keep start pin selected in case user wants to route to another location
+      selectedStartPin = start;
+    }
+
+    routeClearBtn.addEventListener('click', clearRoute);
+
+    // Add click handlers to markers for route selection
+    map.on('popupopen', (e: L.PopupEvent) => {
+      const markerLatLng = e.popup.getLatLng();
+      if (!markerLatLng) return;
+
+      // Find which pin this is
+      const pin = config.pins.find(p =>
+        p.coordinates[0] === markerLatLng.lat && p.coordinates[1] === markerLatLng.lng
+      );
+
+      if (pin) {
+        // Route selection logic
+        if (!selectedStartPin) {
+          // First click - set as start
+          selectedStartPin = pin;
+          console.log('Start point selected:', pin.name);
+        } else if (selectedStartPin.name === pin.name) {
+          // Clicking same pin - deselect
+          selectedStartPin = null;
+          clearRoute();
+          console.log('Start point deselected');
+        } else {
+          // Second click - create route
+          createRoute(selectedStartPin, pin);
+        }
+      }
     });
 
     // Highlight card when marker is clicked
