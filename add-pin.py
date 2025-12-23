@@ -10,6 +10,10 @@ import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
 import yaml
+import argparse
+
+# Global flag for non-interactive mode
+NON_INTERACTIVE = False
 
 
 class MapsParser(HTMLParser):
@@ -168,6 +172,9 @@ def fetch_alltrails_data(url):
             html = response.read().decode('utf-8')
     except Exception as e:
         print(f"\nWarning: Could not auto-fetch data from AllTrails ({e})")
+        if NON_INTERACTIVE:
+            print("Error: Cannot fetch data in non-interactive mode")
+            sys.exit(1)
         print("AllTrails blocks automated access. Please enter the trail details manually:")
         return fetch_alltrails_manual(url)
 
@@ -436,13 +443,17 @@ def process_single_url(url, pins_data):
         category = data.get('category', 'Hike')
         print(f"Category: {category} (auto-assigned for AllTrails)")
 
-        # Prompt for custom description (optional)
-        print(f"\nCurrent description: {data['description']}")
-        custom_desc = input("Enter custom description (or press Enter to keep current): ").strip()
-        if custom_desc:
-            description = custom_desc
-        else:
+        # Prompt for custom description (optional) unless in non-interactive mode
+        if NON_INTERACTIVE:
             description = data['description'] or data['name']
+            print(f"Description: {description}")
+        else:
+            print(f"\nCurrent description: {data['description']}")
+            custom_desc = input("Enter custom description (or press Enter to keep current): ").strip()
+            if custom_desc:
+                description = custom_desc
+            else:
+                description = data['description'] or data['name']
 
         # Create new pin entry for AllTrails
         new_pin = {
@@ -453,39 +464,59 @@ def process_single_url(url, pins_data):
             'link': url  # AllTrails URL goes in "Learn more" link
         }
 
+        # Add numeric fields for hike filtering
+        if 'distance' in data:
+            new_pin['distance'] = data['distance']
+        if 'elevation_gain' in data:
+            new_pin['elevation_gain'] = data['elevation_gain']
+
     else:
         # For maps services (Google/Apple Maps)
         # Try to infer category
         suggested_category = infer_category(data['name'] or '', data['description'] or '', categories)
 
-        # Prompt for category
-        print("\nAvailable categories:")
-        for i, cat in enumerate(categories, 1):
-            marker = " (suggested)" if cat['name'] == suggested_category else ""
-            print(f"{i}. {cat['name']}{marker}")
+        if NON_INTERACTIVE:
+            # In non-interactive mode, use inferred category or error out
+            if suggested_category:
+                category = suggested_category
+                print(f"Category: {category} (auto-inferred)")
+            else:
+                print("Error: Cannot infer category in non-interactive mode")
+                print("Maps URLs require category selection. Use AllTrails URLs for full automation.")
+                sys.exit(1)
 
-        while True:
-            choice = input(f"\nSelect category (1-{len(categories)}): ").strip()
-            try:
-                idx = int(choice) - 1
-                if 0 <= idx < len(categories):
-                    category = categories[idx]['name']
-                    break
-            except ValueError:
-                pass
-            print("Invalid choice. Try again.")
-
-        # Prompt for custom description (optional)
-        print(f"\nCurrent description: {data['description']}")
-        custom_desc = input("Enter custom description (or press Enter to keep current): ").strip()
-        if custom_desc:
-            description = custom_desc
-        else:
             description = data['description'] or data['name']
+            print(f"Description: {description}")
+            learn_more_link = None
+        else:
+            # Interactive mode - prompt for category
+            print("\nAvailable categories:")
+            for i, cat in enumerate(categories, 1):
+                marker = " (suggested)" if cat['name'] == suggested_category else ""
+                print(f"{i}. {cat['name']}{marker}")
 
-        # Prompt for optional "Learn more" link
-        print(f"\nOptional: Add a 'Learn more' link (e.g., Wikipedia, website)")
-        learn_more_link = input("Enter URL (or press Enter to skip): ").strip()
+            while True:
+                choice = input(f"\nSelect category (1-{len(categories)}): ").strip()
+                try:
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(categories):
+                        category = categories[idx]['name']
+                        break
+                except ValueError:
+                    pass
+                print("Invalid choice. Try again.")
+
+            # Prompt for custom description (optional)
+            print(f"\nCurrent description: {data['description']}")
+            custom_desc = input("Enter custom description (or press Enter to keep current): ").strip()
+            if custom_desc:
+                description = custom_desc
+            else:
+                description = data['description'] or data['name']
+
+            # Prompt for optional "Learn more" link
+            print(f"\nOptional: Add a 'Learn more' link (e.g., Wikipedia, website)")
+            learn_more_link = input("Enter URL (or press Enter to skip): ").strip()
 
         # Create new pin entry for maps
         new_pin = {
@@ -511,14 +542,31 @@ def process_single_url(url, pins_data):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python add-pin.py <url-or-file>")
-        print("  Single URL: python add-pin.py <url>")
-        print("  Batch file: python add-pin.py urls.txt")
-        print("\nSupports: Google Maps, Apple Maps, or AllTrails URLs")
-        sys.exit(1)
+    global NON_INTERACTIVE
 
-    input_arg = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        description='Add a pin to pins.yaml from a Maps URL',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python add-pin.py https://www.alltrails.com/trail/us/alaska/flattop-mountain
+  python add-pin.py --non-interactive https://www.alltrails.com/trail/...
+  python add-pin.py urls.txt
+
+Supports: Google Maps, Apple Maps, and AllTrails URLs
+"""
+    )
+    parser.add_argument('url_or_file', help='URL to add or file containing URLs')
+    parser.add_argument('--non-interactive', '-n', action='store_true',
+                        help='Run without prompts (uses defaults, best for AllTrails URLs)')
+
+    args = parser.parse_args()
+
+    NON_INTERACTIVE = args.non_interactive
+    input_arg = args.url_or_file
+
+    if NON_INTERACTIVE:
+        print("Running in non-interactive mode...")
 
     # Check if input is a file
     import os
@@ -551,14 +599,23 @@ def main():
                 print("\n\nBatch processing interrupted by user.")
                 print(f"Processed {success_count}/{i} URLs successfully.")
 
-                # Ask if they want to save what was added so far
-                save_response = input("\nSave pins added so far? (y/n): ").strip().lower()
-                if save_response == 'y':
+                if NON_INTERACTIVE:
+                    # In non-interactive mode, always save
                     save_pins_yaml(pins_data)
                     print(f"Saved {success_count} pin(s) to pins.yaml")
+                else:
+                    # Ask if they want to save what was added so far
+                    save_response = input("\nSave pins added so far? (y/n): ").strip().lower()
+                    if save_response == 'y':
+                        save_pins_yaml(pins_data)
+                        print(f"Saved {success_count} pin(s) to pins.yaml")
                 sys.exit(0)
             except Exception as e:
                 print(f"\n✗ Error processing {url}: {e}")
+                if NON_INTERACTIVE:
+                    # In non-interactive mode, stop on first error
+                    print("Stopping batch processing due to error in non-interactive mode")
+                    break
                 continue_response = input("Continue to next URL? (y/n): ").strip().lower()
                 if continue_response != 'y':
                     break

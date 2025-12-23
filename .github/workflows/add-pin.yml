@@ -30,7 +30,7 @@ jobs:
 
       - name: Run add-pin.py
         run: |
-          python add-pin.py "${{ github.event.inputs.url }}"
+          python add-pin.py --non-interactive "${{ github.event.inputs.url }}"
 
       - name: Commit and push changes
         run: |
