@@ -166,6 +166,27 @@ async function initMap(): Promise<void> {
         .map(c => c.name)
     );
 
+    // Parse URL query parameters to override initial category selection
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoriesParam = urlParams.get('categories');
+
+    if (categoriesParam) {
+      // Clear default selection
+      activeCategories.clear();
+
+      // Parse comma-separated category names (URLSearchParams automatically decodes + as space)
+      const requestedCategories = categoriesParam.split(',').map(c => c.trim());
+
+      // Only add categories that actually exist in the config
+      requestedCategories.forEach(catName => {
+        if (config.categories.some(c => c.name === catName)) {
+          activeCategories.add(catName);
+        } else {
+          console.warn(`Category "${catName}" from URL not found in config`);
+        }
+      });
+    }
+
     // Store all markers by category
     const markersByCategory = new Map<string, { cluster: L.Marker; normal: L.Marker }[]>();
     config.categories.forEach(cat => {
@@ -188,6 +209,7 @@ async function initMap(): Promise<void> {
     let currentMaxDistance = 100;
     let currentMinElevation = 0;
     let currentMaxElevation = 10000;
+    let preHikeModeCategories: Set<string> | null = null;
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
@@ -541,6 +563,9 @@ async function initMap(): Promise<void> {
         // Activate hike mode
         hikeModeBtn?.classList.add('active');
 
+        // Save current category selection before entering hike mode
+        preHikeModeCategories = new Set(activeCategories);
+
         // Hide all non-hike categories
         config.categories.forEach(cat => {
           if (cat.name !== 'Hike') {
@@ -603,12 +628,19 @@ async function initMap(): Promise<void> {
         showLegendBtn.classList.remove('visible');
         mobileFilterContainer.classList.add('empty');
 
-        // Restore all categories except Mountains
-        config.categories.forEach(cat => {
-          if (cat.name !== 'Mountains') {
-            activeCategories.add(cat.name);
-          }
-        });
+        // Restore previous category selection
+        if (preHikeModeCategories) {
+          activeCategories.clear();
+          preHikeModeCategories.forEach(cat => activeCategories.add(cat));
+          preHikeModeCategories = null;
+        } else {
+          // Fallback: restore all categories except Mountains
+          config.categories.forEach(cat => {
+            if (cat.name !== 'Mountains') {
+              activeCategories.add(cat.name);
+            }
+          });
+        }
 
         // Reset filter values
         currentMinDistance = minDistance;
@@ -619,9 +651,14 @@ async function initMap(): Promise<void> {
         // Update visible markers
         updateVisibleMarkers();
 
-        // Update legend visual state
+        // Update legend visual state to match restored categories
         document.querySelectorAll('.legend-item').forEach(item => {
-          item.classList.remove('inactive');
+          const category = item.getAttribute('data-category');
+          if (category && activeCategories.has(category)) {
+            item.classList.remove('inactive');
+          } else {
+            item.classList.add('inactive');
+          }
         });
       }
 
