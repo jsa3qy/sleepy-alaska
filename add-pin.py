@@ -244,12 +244,14 @@ def fetch_alltrails_data(url):
         r'data-length="([0-9.]+)"',
     ]
 
+    distance_value = None
     for pattern in distance_patterns:
         distance_match = re.search(pattern, html)
         if distance_match:
             meters = float(distance_match.group(1))
             miles = meters * 0.000621371
-            distance = f"{miles:.1f} mi"
+            distance_value = round(miles, 1)
+            distance = f"{distance_value} mi"
             break
 
     # Extract elevation gain - try multiple patterns
@@ -259,12 +261,14 @@ def fetch_alltrails_data(url):
         r'data-elevation="([0-9.]+)"',
     ]
 
+    elevation_gain_value = None
     for pattern in elevation_patterns:
         elevation_match = re.search(pattern, html)
         if elevation_match:
             meters = float(elevation_match.group(1))
             feet = meters * 3.28084
-            elevation_gain = f"{int(feet)} ft"
+            elevation_gain_value = int(feet)
+            elevation_gain = f"{elevation_gain_value} ft"
             break
 
     # Build description
@@ -276,13 +280,21 @@ def fetch_alltrails_data(url):
 
     description = " • ".join(description_parts) if description_parts else "Hiking trail"
 
-    return {
+    result = {
         'coordinates': coordinates,
         'name': name,
         'description': description,
         'url': url,
         'category': 'Hike'  # AllTrails is always hiking
     }
+
+    # Add numeric fields for filtering
+    if distance_value is not None:
+        result['distance'] = distance_value
+    if elevation_gain_value is not None:
+        result['elevation_gain'] = elevation_gain_value
+
+    return result
 
 
 def fetch_google_maps_data(url):

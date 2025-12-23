@@ -46,6 +46,167 @@
       transform: translateX(20px);
     }
 
+    /* Hike filter panel */
+    .hike-filter-panel {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      z-index: 1000;
+      max-width: 280px;
+      display: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .hike-filter-panel.visible {
+      display: block;
+    }
+
+    .filter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .filter-header h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .filter-close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+
+    .filter-close-btn:hover {
+      background: rgba(0,0,0,0.04);
+      color: #333;
+    }
+
+    .filter-group {
+      margin-bottom: 20px;
+    }
+
+    .filter-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .filter-value {
+      color: #3498db;
+      font-weight: 600;
+    }
+
+    .filter-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e0e0e0;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .filter-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #3498db;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+
+    .filter-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .filter-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #3498db;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+
+    .filter-slider::-moz-range-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .dual-range {
+      position: relative;
+      height: 6px;
+    }
+
+    .dual-range input[type="range"] {
+      position: absolute;
+      width: 100%;
+      pointer-events: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+    }
+
+    .dual-range input[type="range"]::-webkit-slider-thumb {
+      pointer-events: all;
+    }
+
+    .dual-range input[type="range"]::-moz-range-thumb {
+      pointer-events: all;
+    }
+
+    .range-track {
+      position: absolute;
+      height: 6px;
+      border-radius: 3px;
+      background: #e0e0e0;
+      width: 100%;
+    }
+
+    .range-fill {
+      position: absolute;
+      height: 6px;
+      border-radius: 3px;
+      background: #3498db;
+    }
+
     /* Mobile adjustments */
     @media (max-width: 768px) {
       .legend {
@@ -124,6 +285,37 @@
       border-radius: 6px;
       transition: all 0.2s ease;
       user-select: none;
+    }
+
+    .legend-item-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .hike-mode-btn {
+      background: rgba(52, 152, 219, 0.1);
+      border: 1px solid rgba(52, 152, 219, 0.3);
+      color: #3498db;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .hike-mode-btn:hover {
+      background: rgba(52, 152, 219, 0.2);
+      border-color: rgba(52, 152, 219, 0.5);
+    }
+
+    .hike-mode-btn.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
     }
 
     .legend-item:hover {
@@ -629,6 +821,11 @@
       transform: translateY(0);
     }
 
+    /* Mobile filter container */
+    #mobile-filter-container {
+      display: none;
+    }
+
     /* Mobile adjustments for side panel */
     @media (max-width: 768px) {
       .side-panel {
@@ -640,6 +837,32 @@
         transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: 16px 16px 0 0;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      }
+
+      #mobile-filter-container {
+        display: block;
+        padding: 0 20px 16px 20px;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+      }
+
+      #mobile-filter-container.empty {
+        display: none;
+      }
+
+      .hike-filter-panel {
+        position: static;
+        max-width: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+      }
+
+      .filter-header {
+        display: none;
       }
 
       .side-panel.open {
@@ -705,11 +928,21 @@
       <h2>Locations</h2>
       <button class="panel-close" id="panel-close">&times;</button>
     </div>
+    <div id="mobile-filter-container"></div>
     <div class="panel-content" id="panel-content">
       <!-- Cards will be dynamically inserted here -->
     </div>
   </div>
   <div class="legend" id="legend"></div>
+  <div class="hike-filter-panel" id="hike-filter-panel">
+    <div class="filter-header">
+      <h3>Hike Filters</h3>
+      <button class="filter-close-btn" id="filter-close-btn">&times;</button>
+    </div>
+    <div id="filter-content">
+      <!-- Filter sliders will be inserted here -->
+    </div>
+  </div>
   <button class="show-legend-btn" id="show-legend-btn">Show Legend</button>
   <div class="cluster-toggle" id="cluster-toggle">
     <span>Cluster pins</span>
