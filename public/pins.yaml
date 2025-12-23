@@ -562,3 +562,12 @@ pins:
   description: summer only burrito spot, top tier bbq meats
   category: Eat
   maps_link: https://maps.app.goo.gl/n6ffzZfnRu8THpDZA
+- name: Rainbow Peak Trail
+  coordinates:
+  - 61.00007
+  - -149.64067
+  description: 5.5 mi • +3359 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/rainbow-peak-trail
+  distance: 5.5
+  elevation_gain: 3359

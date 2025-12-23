@@ -10,12 +10,12 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/leaflet": "^1.9.21",
-    "@types/leaflet-routing-machine": "^3.2.9",
     "@types/leaflet.markercluster": "^1.5.4",
     "typescript": "^5.3.3",
     "vite": "^5.0.10"
   },
   "dependencies": {
+    "@types/leaflet-routing-machine": "^3.2.9",
     "js-yaml": "^4.1.0",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",

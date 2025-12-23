@@ -755,63 +755,6 @@
       color: #333;
     }
 
-    /* Route banner */
-    .route-banner {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 12px 40px 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
-      border: 1px solid rgba(0,0,0,0.08);
-      z-index: 1001;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-size: 13px;
-      color: #333;
-      display: none;
-      max-width: 90vw;
-      min-width: 300px;
-    }
-
-    .route-banner.visible {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .route-info {
-      flex: 1;
-      line-height: 1.4;
-    }
-
-    .route-info strong {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-
-    .route-clear-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: #999;
-      cursor: pointer;
-      padding: 4px 8px;
-      line-height: 1;
-      transition: color 0.2s ease;
-    }
-
-    .route-clear-btn:hover {
-      color: #333;
-    }
-
     /* Panel toggle button */
     .panel-toggle {
       position: fixed;
@@ -840,6 +783,297 @@
 
     .panel-toggle:active {
       transform: translateY(0);
+    }
+
+    /* Driving time toggle button */
+    .driving-time-toggle {
+      position: fixed;
+      bottom: 74px;
+      left: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      z-index: 1000;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 13px;
+      color: #333;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .driving-time-toggle:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 6px 16px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    .driving-time-toggle:active {
+      transform: translateY(0);
+    }
+
+    .driving-time-toggle.active {
+      background: #3498db;
+      color: white;
+    }
+
+    /* Route panel */
+    .route-panel {
+      position: fixed;
+      right: -400px;
+      top: 0;
+      width: 400px;
+      height: 100vh;
+      background: white;
+      box-shadow: -2px 0 24px rgba(0,0,0,0.15);
+      z-index: 999;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .route-panel.open {
+      right: 0;
+    }
+
+    /* Hide legend and cluster toggle when route panel is open on desktop */
+    .route-panel.open ~ .legend,
+    .route-panel.open ~ .cluster-toggle {
+      z-index: 998;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+
+    .route-panel-header {
+      padding: 24px 24px 16px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .route-panel-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .route-panel-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #999;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .route-panel-close:hover {
+      background: rgba(0,0,0,0.04);
+      color: #333;
+    }
+
+    .route-panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .route-selector {
+      margin-bottom: 24px;
+    }
+
+    .route-selector label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .route-select-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .route-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 16px; /* Prevents iOS auto-zoom on focus */
+      color: #333;
+      background: white;
+      transition: all 0.2s ease;
+    }
+
+    .route-map-pick-btn {
+      padding: 10px 12px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+      transition: background 0.2s ease;
+    }
+
+    .route-map-pick-btn:hover {
+      background: #2980b9;
+    }
+
+    .route-map-pick-btn.active {
+      background: #e74c3c;
+    }
+
+    .route-map-pick-btn.active::before {
+      content: '✓ ';
+    }
+
+    .route-input:hover {
+      border-color: rgba(0,0,0,0.2);
+    }
+
+    .route-input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .route-suggestions {
+      display: none;
+      margin-top: 8px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .route-suggestions.visible {
+      display: block;
+    }
+
+    .route-suggestion-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .route-suggestion-item:hover {
+      background: rgba(52, 152, 219, 0.08);
+    }
+
+    .route-suggestion-item:first-child {
+      border-radius: 6px 6px 0 0;
+    }
+
+    /* Pick from map banner (desktop) */
+    .route-pick-mode-banner {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #e74c3c;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      z-index: 10000;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .route-pick-mode-banner button {
+      margin-left: 12px;
+      background: white;
+      color: #e74c3c;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .route-pick-mode-banner button:hover {
+      background: #f8f8f8;
+    }
+
+    .route-suggestion-item:last-child {
+      border-radius: 0 0 6px 6px;
+    }
+
+    .route-suggestion-item.selected {
+      background: rgba(52, 152, 219, 0.15);
+    }
+
+    .route-clear-select {
+      background: rgba(0,0,0,0.04);
+      border: none;
+      width: 32px;
+      height: 40px;
+      border-radius: 6px;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .route-clear-select.visible {
+      display: flex;
+    }
+
+    .route-clear-select:hover {
+      background: rgba(0,0,0,0.08);
+      color: #333;
+    }
+
+    .route-result {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(52, 152, 219, 0.08);
+      border-radius: 8px;
+      border: 1px solid rgba(52, 152, 219, 0.2);
+      display: none;
+    }
+
+    .route-result.visible {
+      display: block;
+    }
+
+    .route-result strong {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .route-result-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #555;
     }
 
     /* Show legend button (appears when legend is hidden) */
@@ -955,18 +1189,104 @@
         font-size: 12px;
       }
 
+      .driving-time-toggle {
+        bottom: max(60px, env(safe-area-inset-bottom) + 50px);
+        left: max(10px, env(safe-area-inset-left) + 10px);
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+
       #map {
         height: 100vh;
         transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      #map.panel-open {
+      #map.panel-open, #map.route-panel-open {
         height: 50vh;
       }
 
       .show-legend-btn {
         top: max(16px, env(safe-area-inset-top) + 10px);
         right: max(10px, env(safe-area-inset-right) + 10px);
+      }
+
+      /* Route panel on mobile */
+      .route-panel {
+        width: 100%;
+        height: 50vh;
+        top: auto;
+        bottom: -50vh;
+        right: 0;
+        left: 0;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      }
+
+      .route-panel.open {
+        bottom: 0;
+        right: 0;
+      }
+
+      /* Don't fade legend/cluster on mobile since panel comes from bottom */
+      .route-panel.open ~ .legend,
+      .route-panel.open ~ .cluster-toggle {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Hide driving time and list view buttons when route panel is open on mobile */
+      .route-panel.open ~ .driving-time-toggle,
+      .route-panel.open ~ .panel-toggle {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Improved autocomplete on mobile */
+      .route-suggestions {
+        max-height: 150px;
+        margin-top: 4px;
+      }
+
+      .route-suggestion-item {
+        padding: 14px;
+        font-size: 16px;
+      }
+
+      /* Map pick button styling for mobile */
+      .route-map-pick-btn {
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      /* When in pick mode, show instruction banner */
+      .route-pick-mode-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        transform: none;
+        border-radius: 0;
+        background: #e74c3c;
+        color: white;
+        padding: 12px 16px;
+        padding-top: max(12px, env(safe-area-inset-top));
+        text-align: center;
+        font-weight: 500;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: none;
+      }
+
+      .route-pick-mode-banner button {
+        margin-left: 12px;
+        background: white;
+        color: #e74c3c;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
       }
     }
 
@@ -980,10 +1300,6 @@
 </head>
 <body>
   <div id="map"></div>
-  <div class="route-banner" id="route-banner">
-    <div class="route-info" id="route-info"></div>
-    <button class="route-clear-btn" id="route-clear-btn">&times;</button>
-  </div>
   <div class="side-panel" id="side-panel">
     <div class="panel-header">
       <h2>Locations</h2>
@@ -1004,11 +1320,41 @@
       <!-- Filter sliders will be inserted here -->
     </div>
   </div>
+  <div class="route-panel" id="route-panel">
+    <div class="route-panel-header">
+      <h3>Route Between</h3>
+      <button class="route-panel-close" id="route-panel-close">&times;</button>
+    </div>
+    <div class="route-panel-content">
+      <div class="route-selector">
+        <label>Start</label>
+        <div class="route-select-wrapper">
+          <input type="text" id="route-start-input" class="route-input" placeholder="Type to search...">
+          <button class="route-map-pick-btn" id="route-pick-start">Pick</button>
+          <button class="route-clear-select" id="route-clear-start">&times;</button>
+        </div>
+        <div class="route-suggestions" id="route-start-suggestions"></div>
+      </div>
+      <div class="route-selector">
+        <label>Destination</label>
+        <div class="route-select-wrapper">
+          <input type="text" id="route-end-input" class="route-input" placeholder="Type to search...">
+          <button class="route-map-pick-btn" id="route-pick-end">Pick</button>
+          <button class="route-clear-select" id="route-clear-end">&times;</button>
+        </div>
+        <div class="route-suggestions" id="route-end-suggestions"></div>
+      </div>
+      <div class="route-result" id="route-result"></div>
+    </div>
+  </div>
   <button class="show-legend-btn" id="show-legend-btn">Show Legend</button>
   <div class="cluster-toggle" id="cluster-toggle">
     <span>Cluster pins</span>
     <div class="toggle-switch" id="toggle-switch"></div>
   </div>
+  <button class="driving-time-toggle" id="driving-time-toggle">
+    <span>Driving Time</span>
+  </button>
   <button class="panel-toggle" id="panel-toggle">
     <span>List View</span>
   </button>

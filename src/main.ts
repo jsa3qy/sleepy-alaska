@@ -215,7 +215,6 @@ async function initMap(): Promise<void> {
 
     // Routing state
     let routingControl: L.Routing.Control | null = null;
-    let selectedStartPin: Pin | null = null;
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
@@ -754,28 +753,232 @@ async function initMap(): Promise<void> {
     });
 
     // Routing functionality
-    const routeBanner = document.getElementById('route-banner')!;
-    const routeInfo = document.getElementById('route-info')!;
-    const routeClearBtn = document.getElementById('route-clear-btn')!;
+    const routePanel = document.getElementById('route-panel')!;
+    const routePanelClose = document.getElementById('route-panel-close')!;
+    const drivingTimeToggle = document.getElementById('driving-time-toggle')!;
+    const routeStartInput = document.getElementById('route-start-input') as HTMLInputElement;
+    const routeEndInput = document.getElementById('route-end-input') as HTMLInputElement;
+    const routeStartSuggestions = document.getElementById('route-start-suggestions')!;
+    const routeEndSuggestions = document.getElementById('route-end-suggestions')!;
+    const routeClearStart = document.getElementById('route-clear-start')!;
+    const routeClearEnd = document.getElementById('route-clear-end')!;
+    const routeResult = document.getElementById('route-result')!;
+    const routePickStart = document.getElementById('route-pick-start')!;
+    const routePickEnd = document.getElementById('route-pick-end')!;
+
+    let selectedStartPin: string = '';
+    let selectedEndPin: string = '';
+    let focusedInput: 'start' | 'end' | null = null;
+    let pickMode: 'start' | 'end' | null = null;
+    let pickModeBanner: HTMLElement | null = null;
+
+    // Track which input is focused
+    routeStartInput.addEventListener('focus', () => {
+      focusedInput = 'start';
+    });
+
+    routeEndInput.addEventListener('focus', () => {
+      focusedInput = 'end';
+    });
+
+    routeStartInput.addEventListener('blur', () => {
+      // Delay clearing focus to allow click events to process
+      setTimeout(() => {
+        if (focusedInput === 'start') focusedInput = null;
+      }, 200);
+    });
+
+    routeEndInput.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (focusedInput === 'end') focusedInput = null;
+      }, 200);
+    });
+
+    // Set default to "Jesse's House" if it exists
+    const jessesHouse = config.pins.find(p => p.name === "Jesse's House");
+    if (jessesHouse) {
+      routeStartInput.value = "Jesse's House";
+      selectedStartPin = "Jesse's House";
+      routeClearStart.classList.add('visible');
+    }
+
+    // Autocomplete functionality
+    function setupAutocomplete(input: HTMLInputElement, suggestionsEl: HTMLElement, onSelect: (pinName: string) => void) {
+      input.addEventListener('input', () => {
+        const query = input.value.toLowerCase().trim();
+
+        if (!query) {
+          suggestionsEl.classList.remove('visible');
+          suggestionsEl.innerHTML = '';
+          return;
+        }
+
+        // Substring matching
+        const matches = config.pins.filter(pin =>
+          pin.name.toLowerCase().includes(query)
+        );
+
+        if (matches.length === 0) {
+          suggestionsEl.classList.remove('visible');
+          suggestionsEl.innerHTML = '';
+          return;
+        }
+
+        // Render suggestions
+        suggestionsEl.innerHTML = '';
+        matches.forEach(pin => {
+          const item = document.createElement('div');
+          item.className = 'route-suggestion-item';
+          item.textContent = pin.name;
+          item.addEventListener('click', () => {
+            input.value = pin.name;
+            onSelect(pin.name);
+            suggestionsEl.classList.remove('visible');
+            suggestionsEl.innerHTML = '';
+          });
+          suggestionsEl.appendChild(item);
+        });
+
+        suggestionsEl.classList.add('visible');
+      });
+
+      // Close suggestions when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target as Node) && !suggestionsEl.contains(e.target as Node)) {
+          suggestionsEl.classList.remove('visible');
+        }
+      });
+    }
+
+    setupAutocomplete(routeStartInput, routeStartSuggestions, (pinName) => {
+      selectedStartPin = pinName;
+      routeClearStart.classList.add('visible');
+      calculateRoute();
+    });
+
+    setupAutocomplete(routeEndInput, routeEndSuggestions, (pinName) => {
+      selectedEndPin = pinName;
+      routeClearEnd.classList.add('visible');
+      calculateRoute();
+    });
+
+    // Pick from map functionality
+    function enterPickMode(mode: 'start' | 'end') {
+      pickMode = mode;
+      const isMobile = window.innerWidth <= 768;
+
+      // Update button states
+      routePickStart.classList.toggle('active', mode === 'start');
+      routePickEnd.classList.toggle('active', mode === 'end');
+
+      // Create and show banner
+      if (!pickModeBanner) {
+        pickModeBanner = document.createElement('div');
+        pickModeBanner.className = 'route-pick-mode-banner';
+        document.body.appendChild(pickModeBanner);
+      }
+
+      const label = mode === 'start' ? 'Start' : 'Destination';
+      pickModeBanner.innerHTML = `Tap a pin to set as ${label} <button id="cancel-pick-mode">Cancel</button>`;
+      pickModeBanner.style.display = 'block';
+
+      document.getElementById('cancel-pick-mode')!.addEventListener('click', exitPickMode);
+
+      // On mobile, minimize the route panel to show more map
+      if (isMobile) {
+        routePanel.classList.remove('open');
+        mapElement.classList.remove('route-panel-open');
+        setTimeout(() => map.invalidateSize(), 350);
+      }
+    }
+
+    function exitPickMode() {
+      pickMode = null;
+      routePickStart.classList.remove('active');
+      routePickEnd.classList.remove('active');
+
+      if (pickModeBanner) {
+        pickModeBanner.style.display = 'none';
+      }
+
+      // On mobile, reopen the route panel
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        routePanel.classList.add('open');
+        mapElement.classList.add('route-panel-open');
+        setTimeout(() => map.invalidateSize(), 350);
+      }
+    }
+
+    function handlePickModeSelection(pinName: string) {
+      if (!pickMode) return;
+
+      if (pickMode === 'start') {
+        routeStartInput.value = pinName;
+        selectedStartPin = pinName;
+        routeClearStart.classList.add('visible');
+      } else {
+        routeEndInput.value = pinName;
+        selectedEndPin = pinName;
+        routeClearEnd.classList.add('visible');
+      }
+
+      exitPickMode();
+      calculateRoute();
+    }
+
+    // Pick button click handlers
+    routePickStart.addEventListener('click', () => {
+      if (pickMode === 'start') {
+        exitPickMode();
+      } else {
+        enterPickMode('start');
+      }
+    });
+
+    routePickEnd.addEventListener('click', () => {
+      if (pickMode === 'end') {
+        exitPickMode();
+      } else {
+        enterPickMode('end');
+      }
+    });
 
     function clearRoute() {
       if (routingControl) {
         map.removeControl(routingControl);
         routingControl = null;
       }
-      selectedStartPin = null;
-      routeBanner.classList.remove('visible');
+      routeResult.classList.remove('visible');
     }
 
-    function createRoute(start: Pin, end: Pin) {
+    function calculateRoute() {
+      const startName = selectedStartPin;
+      const endName = selectedEndPin;
+
+      if (!startName || !endName) {
+        clearRoute();
+        return;
+      }
+
+      const startPin = config.pins.find(p => p.name === startName);
+      const endPin = config.pins.find(p => p.name === endName);
+
+      if (!startPin || !endPin) {
+        clearRoute();
+        return;
+      }
+
       // Clear existing route
-      clearRoute();
+      if (routingControl) {
+        map.removeControl(routingControl);
+      }
 
       // Create routing control
       routingControl = L.Routing.control({
         waypoints: [
-          L.latLng(start.coordinates[0], start.coordinates[1]),
-          L.latLng(end.coordinates[0], end.coordinates[1])
+          L.latLng(startPin.coordinates[0], startPin.coordinates[1]),
+          L.latLng(endPin.coordinates[0], endPin.coordinates[1])
         ],
         router: L.Routing.osrmv1({
           serviceUrl: 'https://router.project-osrm.org/route/v1'
@@ -808,43 +1011,80 @@ async function initMap(): Promise<void> {
             timeStr = `${mins}min`;
           }
 
-          routeInfo.innerHTML = `<strong>${start.name}</strong> → <strong>${end.name}</strong> • ${distanceMiles} mi • ${timeStr} drive`;
-          routeBanner.classList.add('visible');
+          routeResult.innerHTML = `<div class="route-result-text"><strong>${startPin.name}</strong> → <strong>${endPin.name}</strong><br>${distanceMiles} mi • ${timeStr} drive</div>`;
+          routeResult.classList.add('visible');
         }
       });
-
-      // Keep start pin selected in case user wants to route to another location
-      selectedStartPin = start;
     }
 
-    routeClearBtn.addEventListener('click', clearRoute);
+    // Toggle driving time panel
+    drivingTimeToggle.addEventListener('click', () => {
+      const isOpen = routePanel.classList.contains('open');
+      const isMobile = window.innerWidth <= 768;
 
-    // Add click handlers to markers for route selection
-    map.on('popupopen', (e: L.PopupEvent) => {
-      const markerLatLng = e.popup.getLatLng();
-      if (!markerLatLng) return;
+      if (isOpen) {
+        routePanel.classList.remove('open');
+        drivingTimeToggle.classList.remove('active');
+        if (isMobile) {
+          mapElement.classList.remove('route-panel-open');
+        }
+        clearRoute();
+      } else {
+        routePanel.classList.add('open');
+        drivingTimeToggle.classList.add('active');
+        if (isMobile) {
+          mapElement.classList.add('route-panel-open');
+        }
 
-      // Find which pin this is
-      const pin = config.pins.find(p =>
-        p.coordinates[0] === markerLatLng.lat && p.coordinates[1] === markerLatLng.lng
-      );
+        // Hide legend when driving time panel opens
+        legendElement.classList.add('hidden');
+        showLegendBtn.classList.add('visible');
 
-      if (pin) {
-        // Route selection logic
-        if (!selectedStartPin) {
-          // First click - set as start
-          selectedStartPin = pin;
-          console.log('Start point selected:', pin.name);
-        } else if (selectedStartPin.name === pin.name) {
-          // Clicking same pin - deselect
-          selectedStartPin = null;
-          clearRoute();
-          console.log('Start point deselected');
-        } else {
-          // Second click - create route
-          createRoute(selectedStartPin, pin);
+        // Calculate route if both selections exist
+        if (selectedStartPin && selectedEndPin) {
+          calculateRoute();
         }
       }
+
+      // Invalidate map size after transition
+      if (isMobile) {
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 350);
+      }
+    });
+
+    routePanelClose.addEventListener('click', () => {
+      const isMobile = window.innerWidth <= 768;
+
+      routePanel.classList.remove('open');
+      drivingTimeToggle.classList.remove('active');
+      if (isMobile) {
+        mapElement.classList.remove('route-panel-open');
+      }
+      clearRoute();
+
+      // Invalidate map size after transition
+      if (isMobile) {
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 350);
+      }
+    });
+
+    // Clear button handlers
+    routeClearStart.addEventListener('click', () => {
+      routeStartInput.value = '';
+      selectedStartPin = '';
+      routeClearStart.classList.remove('visible');
+      clearRoute();
+    });
+
+    routeClearEnd.addEventListener('click', () => {
+      routeEndInput.value = '';
+      selectedEndPin = '';
+      routeClearEnd.classList.remove('visible');
+      clearRoute();
     });
 
     // Highlight card when marker is clicked
@@ -858,6 +1098,31 @@ async function initMap(): Promise<void> {
       );
 
       if (pin) {
+        // If in pick mode, handle the selection
+        if (pickMode) {
+          handlePickModeSelection(pin.name);
+          map.closePopup(); // Close the popup after selection
+          return;
+        }
+
+        // If route panel is open and an input is focused, fill it with the clicked pin
+        const isRoutePanelOpen = routePanel.classList.contains('open');
+        if (isRoutePanelOpen && focusedInput) {
+          if (focusedInput === 'start') {
+            routeStartInput.value = pin.name;
+            selectedStartPin = pin.name;
+            routeClearStart.classList.add('visible');
+            routeStartSuggestions.classList.remove('visible');
+            calculateRoute();
+          } else if (focusedInput === 'end') {
+            routeEndInput.value = pin.name;
+            selectedEndPin = pin.name;
+            routeClearEnd.classList.add('visible');
+            routeEndSuggestions.classList.remove('visible');
+            calculateRoute();
+          }
+          return; // Don't proceed with card highlighting
+        }
         // Highlight corresponding card
         document.querySelectorAll('.location-card').forEach(c => c.classList.remove('active'));
         const card = document.querySelector(`.location-card[data-pin-name="${pin.name}"]`);
