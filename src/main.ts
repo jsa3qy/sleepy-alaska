@@ -1020,21 +1020,16 @@ async function initMap(): Promise<void> {
     // Toggle driving time panel
     drivingTimeToggle.addEventListener('click', () => {
       const isOpen = routePanel.classList.contains('open');
-      const isMobile = window.innerWidth <= 768;
 
       if (isOpen) {
         routePanel.classList.remove('open');
         drivingTimeToggle.classList.remove('active');
-        if (isMobile) {
-          mapElement.classList.remove('route-panel-open');
-        }
+        mapElement.classList.remove('route-panel-open');
         clearRoute();
       } else {
         routePanel.classList.add('open');
         drivingTimeToggle.classList.add('active');
-        if (isMobile) {
-          mapElement.classList.add('route-panel-open');
-        }
+        mapElement.classList.add('route-panel-open');
 
         // Hide legend when driving time panel opens
         legendElement.classList.add('hidden');
@@ -1047,29 +1042,21 @@ async function initMap(): Promise<void> {
       }
 
       // Invalidate map size after transition
-      if (isMobile) {
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 350);
-      }
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 350);
     });
 
     routePanelClose.addEventListener('click', () => {
-      const isMobile = window.innerWidth <= 768;
-
       routePanel.classList.remove('open');
       drivingTimeToggle.classList.remove('active');
-      if (isMobile) {
-        mapElement.classList.remove('route-panel-open');
-      }
+      mapElement.classList.remove('route-panel-open');
       clearRoute();
 
       // Invalidate map size after transition
-      if (isMobile) {
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 350);
-      }
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 350);
     });
 
     // Clear button handlers
