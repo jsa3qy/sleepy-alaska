@@ -218,6 +218,8 @@ async function initMap(): Promise<void> {
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
+    // Store markers by pin name for search functionality
+    const pinMarkers = new Map<string, L.Marker>();
 
     // Create all markers and organize by category
     config.pins.forEach(pin => {
@@ -254,6 +256,9 @@ async function initMap(): Promise<void> {
       // Map markers to pin data (do this immediately when creating markers)
       markerDataMap.set(clusterMarker, pin);
       markerDataMap.set(normalMarker, pin);
+
+      // Store marker reference by pin name for search
+      pinMarkers.set(pin.name, clusterMarker);
     });
 
     // Function to update visible markers based on active categories
@@ -750,6 +755,87 @@ async function initMap(): Promise<void> {
       setTimeout(() => {
         map.invalidateSize();
       }, 350);
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const searchClear = document.getElementById('search-clear')!;
+    const searchResults = document.getElementById('search-results')!;
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+
+      // Toggle clear button visibility
+      searchClear.classList.toggle('visible', query.length > 0);
+
+      if (!query) {
+        searchResults.classList.remove('visible');
+        searchResults.innerHTML = '';
+        return;
+      }
+
+      // Search pins by name, description, and category
+      const matches = config.pins.filter(pin =>
+        pin.name.toLowerCase().includes(query) ||
+        pin.description.toLowerCase().includes(query) ||
+        pin.category.toLowerCase().includes(query)
+      );
+
+      if (matches.length === 0) {
+        searchResults.innerHTML = '<div class="search-no-results">No results found</div>';
+        searchResults.classList.add('visible');
+        return;
+      }
+
+      // Render results
+      searchResults.innerHTML = '';
+      matches.slice(0, 10).forEach(pin => { // Limit to 10 results
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = `
+          <div class="search-result-name">${pin.name}</div>
+          <div class="search-result-category">${pin.category}</div>
+        `;
+        item.addEventListener('click', () => {
+          // Fly to the pin
+          map.flyTo([pin.coordinates[0], pin.coordinates[1]], 15, {
+            duration: 0.8
+          });
+
+          // Find and open the marker popup
+          const marker = pinMarkers.get(pin.name);
+          if (marker) {
+            setTimeout(() => {
+              marker.openPopup();
+            }, 800);
+          }
+
+          // Clear search
+          searchInput.value = '';
+          searchClear.classList.remove('visible');
+          searchResults.classList.remove('visible');
+          searchResults.innerHTML = '';
+        });
+        searchResults.appendChild(item);
+      });
+
+      searchResults.classList.add('visible');
+    });
+
+    // Clear search
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.classList.remove('visible');
+      searchResults.classList.remove('visible');
+      searchResults.innerHTML = '';
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('search-container')!;
+      if (!container.contains(e.target as Node)) {
+        searchResults.classList.remove('visible');
+      }
     });
 
     // Routing functionality
