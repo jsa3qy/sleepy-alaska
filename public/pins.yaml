@@ -59,9 +59,11 @@ pins:
   coordinates:
   - 61.1912903
   - -149.8736623
-  description: The only climbing gym in Anchorage!
+  description: Anchorage's only climbing gym features 20,000 sq ft of climbing terrain with 46-foot walls, bouldering, and auto-belays for solo sessions. Gear rental available, making it beginner-friendly. Great rainy day activity.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/w6HZ54rNwnVrkAnp7
+  cost: ~$26 day pass (+$13 gear rental)
+  tips: Plan for 1.5-3 hours
 - name: Namaste Shangri-La
   coordinates:
   - 61.180332
@@ -229,9 +231,11 @@ pins:
   coordinates:
   - 60.8212004
   - -148.9792242
-  description: Like an outdoor native species Zoo. Top Tier, day pass ~$30
+  description: A 200-acre non-profit sanctuary where you can see bears, moose, musk ox, wolves, and more in naturalistic enclosures. Drive or walk the 1.5-mile loop with stunning Chugach Mountain views. Great for all ages and weather conditions.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/EMTHBZu7Dv3UNUwX7
+  cost: ~$27 adults / $22 youth (4-12) / Free under 3
+  tips: Plan for 1.5-2.5 hours
 - name: Talkeetna
   coordinates:
   - 62.3209046
@@ -244,17 +248,20 @@ pins:
   coordinates:
   - 62.3211962
   - -150.1032689
-  description: Flight Tour pAir Taxi
+  description: Flightseeing tours over Denali with optional glacier landings in the Ruth Amphitheater. Get within 6 miles of North America's tallest peak and land on ancient ice. A bucket-list Alaska experience, weather permitting.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/X9NHNRbDiuXsBLBr6
+  cost: ~$285-485 per person (glacier landing on higher end)
+  tips: Plan 1-2.5 hours (plus 2hr drive to Talkeetna)
 - name: Flow AK Rafting
   coordinates:
   - 60.9176224
   - -149.6397566
-  description: Raft Six Mile Creek, one of the only class 5 commercial rafting spots
-    in the world
+  description: One of North America's premier whitewater runs with Class IV-V rapids through three stunning canyons. All gear provided including dry suits. No experience needed, but be ready to paddle hard. Minimum age 12.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/jxaVM4MekMZZX28Q8
+  cost: ~$200 per person
+  tips: Plan 3-4 hours on water (plus 1.5hr drive to Hope)
 - name: Hope
   coordinates:
   - 60.918305
@@ -288,16 +295,20 @@ pins:
   coordinates:
   - 60.1042139
   - -149.441802
-  description: Sea Kayaking ooutfitter!
+  description: Guided sea kayaking in Resurrection Bay and Kenai Fjords with small groups (max 6). Half-day tours paddle the fjord coastline; full-day options include glacier views and wildlife. All gear provided including rain jackets and boots if needed.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/Q1EB17hsQfgygg6x7
+  cost: ~$100-175 half day / $250-400+ full day
+  tips: Half day ~4 hours / Full day ~8 hours
 - name: Alaska SeaLife Center
   coordinates:
   - 60.0998464
   - -149.4407077
-  description: Cool native sea life center. Kinda like a cooler aquarium
+  description: Alaska's only public aquarium and marine wildlife rescue center, featuring seals, sea lions, puffins, and octopus in habitats overlooking Resurrection Bay. Great for kids and rainy days. Also serves as a research and rehabilitation facility.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/4sZNZ251nFwP7VL29
+  cost: ~$25-30 adults (discounts for AK residents, military, kids)
+  tips: Plan for 2-3 hours
 - name: Whittier
   coordinates:
   - 60.7745903
@@ -317,9 +328,11 @@ pins:
   coordinates:
   - 60.7727546
   - -148.6845856
-  description: Jet Ski Galcier Tour outfitter!
+  description: Jet ski 55 miles through Prince William Sound to Blackstone Bay's tidewater glaciers. Full dry suits, helmets with radio comms, and guides provided. Get closer to glaciers than any boat tour. Family-owned, Alaska's first jet ski tour company.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/FAgMULbxaesf3ASL7
+  cost: ~$360 per person
+  tips: Plan ~4 hours (plus drive through tunnel to Whittier)
 - name: Girdwood
   coordinates:
   - 60.9543247
@@ -338,9 +351,11 @@ pins:
   coordinates:
   - 60.9706743
   - -149.0959696
-  description: Nordic Spa next to Alyeska
+  description: Alaska's first Nordic spa with 50,000 sq ft of outdoor hydrotherapy pools, saunas, steam rooms, and cold plunges set against Chugach Mountain views. Full-day access lets you cycle between hot and cold experiences. Adults only (18+), reservations required.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/eF3gQqoXb1Jf2NZcA
+  cost: ~$99-119 full-day access (AK residents 20% off)
+  tips: Plan 2-6+ hours (full day access included)
 - name: Anchorage Brewing Company
   coordinates:
   - 61.1385403
@@ -390,9 +405,11 @@ pins:
   coordinates:
   - 61.2162281
   - -149.8855791
-  description: super cool, esp on first Friday
+  description: Alaska's largest museum featuring art, history, science, and Indigenous cultures across multiple floors. Includes a planetarium and hands-on kids area. First Fridays are free 6-9pm with live music and special programming.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/MbzsGV18t5qCidWu9
+  cost: $25 adults / $20 AK residents / Free First Fridays 6-9pm
+  tips: Plan for 2-4 hours
 - name: Temptation Peak
   coordinates:
   - 61.1675
@@ -543,18 +560,20 @@ pins:
   coordinates:
   - 61.7900647
   - -147.9346948
-  description: Matanuska River Rafting -- Class 4, super fun glacial river. Very silty
-    and unique looking
+  description: Whitewater rafting on the glacial Matanuska River with stunning mountain views. Lion's Head run features Class III-IV rapids; scenic float option available for families. The silty glacier-fed water creates a unique turquoise color.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/neGR4EAtrFnKNxUx5
+  cost: ~$139 (Class III-IV) / $99 scenic float
+  tips: Plan 3-4 hours (plus 2hr drive from Anchorage)
 - name: Homer Spit
   coordinates:
   - 59.62
   - -151.4547222
-  description: Go Charter fishing off of the spit! There's like 25 different charter
-    companies that operate off of the spit here.
+  description: The 'Halibut Fishing Capital of the World' with dozens of charter companies operating off the spit. Half-day to full-day trips available targeting halibut, salmon, and more. Fish processing available nearby to vacuum seal and ship your catch home.
   category: Tourist Activity
   maps_link: https://maps.app.goo.gl/dVMbUz853wp1UKWH8
+  cost: ~$300-500 per person depending on trip length
+  tips: Half day 5-6 hrs / Full day 8-10 hrs (plus 4.5hr drive from Anchorage)
 - name: El Green-Go's · 390 L St, Anchorage, AK 99501
   coordinates:
   - 61.218465

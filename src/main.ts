@@ -229,6 +229,16 @@ async function initMap(): Promise<void> {
       // Create popup content
       let popupContent = `<strong>${pin.name}</strong><br>${pin.description}`;
 
+      // Add cost for Tourist Activity pins
+      if (pin.cost) {
+        popupContent += `<br><strong>Cost:</strong> ${pin.cost}`;
+      }
+
+      // Add tips if available
+      if (pin.tips) {
+        popupContent += `<br><strong>Time:</strong> ${pin.tips}`;
+      }
+
       const links: string[] = [];
       if (pin.link) {
         links.push(`<a href="${pin.link}" target="_blank">Learn more</a>`);
