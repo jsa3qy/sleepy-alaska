@@ -179,10 +179,11 @@ async function initMap(): Promise<void> {
       // Parse comma-separated category names (URLSearchParams automatically decodes + as space)
       const requestedCategories = categoriesParam.split(',').map(c => c.trim());
 
-      // Only add categories that actually exist in the config
+      // Only add categories that actually exist in the config (case-insensitive matching)
       requestedCategories.forEach(catName => {
-        if (config.categories.some(c => c.name === catName)) {
-          activeCategories.add(catName);
+        const matchedCategory = config.categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+        if (matchedCategory) {
+          activeCategories.add(matchedCategory.name); // Use the correctly-cased name from config
         } else {
           console.warn(`Category "${catName}" from URL not found in config`);
         }
