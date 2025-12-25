@@ -610,3 +610,17 @@ pins:
   link: https://www.nps.gov/katm/planyourvisit/brooks-camp.htm
   cost: ~$700-900 per person (day trip with flight)
   tips: Full day trip (7-10 hours including flights)
+- name: Palmer
+  coordinates:
+  - 61.5994
+  - -149.1127
+  description: Historic farming town in the Mat-Su Valley, home of the Alaska State Fair in late August. Known for giant vegetables and mountain views.
+  category: City
+  maps_link: https://maps.app.goo.gl/3h5h5NqsV8ZR7KSWA
+- name: Valdez
+  coordinates:
+  - 61.1308
+  - -146.3483
+  description: Stunning port town at the end of Richardson Highway, surrounded by waterfalls and glaciers. Terminus of the Trans-Alaska Pipeline and gateway to Prince William Sound.
+  category: City
+  maps_link: https://maps.app.goo.gl/mJqSXrCz7s6QQZWV7
