@@ -624,3 +624,13 @@ pins:
   description: Stunning port town at the end of Richardson Highway, surrounded by waterfalls and glaciers. Terminus of the Trans-Alaska Pipeline and gateway to Prince William Sound.
   category: City
   maps_link: https://maps.app.goo.gl/mJqSXrCz7s6QQZWV7
+- name: Kenai Fjords Glacier Cruise (Seward)
+  coordinates:
+  - 60.1047
+  - -149.4421
+  description: Cruise into Kenai Fjords National Park to see tidewater glaciers calving, whales (orca and humpback), sea lions, puffins, and otters. The original Seward tour operator since 1978. Multiple trip lengths from 4-9 hours, with glacier-side dining options on longer cruises.
+  category: Tourist Activity
+  link: https://www.alaskacollection.com/day-tours/kenai-fjords-tours/
+  maps_link: https://maps.app.goo.gl/MkV4t6NoDmYgtv4i7
+  cost: ~$150-250+ depending on cruise length
+  tips: Half day 4-5 hrs / Full day 6-9 hrs (2.5hr drive from Anchorage)
