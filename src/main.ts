@@ -98,14 +98,16 @@ function renderLegend(
     const itemContent = document.createElement('div');
     itemContent.className = 'legend-item-content';
 
-    const colorBox = document.createElement('div');
-    colorBox.className = 'legend-color';
-    colorBox.style.backgroundColor = category.color;
+    // Add checkbox indicator (shows category color when active)
+    const checkbox = document.createElement('div');
+    checkbox.className = 'legend-checkbox';
+    checkbox.style.backgroundColor = category.color;
+    checkbox.style.borderColor = category.color;
 
     const label = document.createElement('span');
     label.textContent = category.name;
 
-    itemContent.appendChild(colorBox);
+    itemContent.appendChild(checkbox);
     itemContent.appendChild(label);
     item.appendChild(itemContent);
 

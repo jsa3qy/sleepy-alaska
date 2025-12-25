@@ -408,6 +408,43 @@
       border-radius: 6px;
       transition: all 0.2s ease;
       user-select: none;
+      position: relative;
+    }
+
+    .legend-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      background: white;
+    }
+
+    .legend-checkbox::after {
+      content: '✓';
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      opacity: 1;
+      transition: opacity 0.15s ease;
+    }
+
+    .legend-item:hover .legend-checkbox {
+      border-color: #999;
+    }
+
+    .legend-item.inactive .legend-checkbox {
+      background: white;
+      border-color: #ddd;
+    }
+
+    .legend-item.inactive .legend-checkbox::after {
+      opacity: 0;
     }
 
     .legend-item-content {
