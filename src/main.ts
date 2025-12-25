@@ -6,7 +6,36 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import { fetchAndParseGPX, toLeafletCoords } from './gpxParser';
+
+// GPX parsing - fetches local GPX files and extracts coordinates
+async function fetchAndParseGPX(url: string): Promise<[number, number][]> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const gpxText = await response.text();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(gpxText, 'text/xml');
+    const coordinates: [number, number][] = [];
+
+    let trackPoints = doc.querySelectorAll('trkpt');
+    if (trackPoints.length === 0) trackPoints = doc.querySelectorAll('rtept');
+    if (trackPoints.length === 0) trackPoints = doc.querySelectorAll('wpt');
+
+    trackPoints.forEach(point => {
+      const lat = parseFloat(point.getAttribute('lat') || '0');
+      const lng = parseFloat(point.getAttribute('lon') || '0');
+      if (lat !== 0 && lng !== 0) {
+        coordinates.push([lat, lng]);
+      }
+    });
+
+    return coordinates;
+  } catch (error) {
+    console.error('Error fetching/parsing GPX:', error);
+    return [];
+  }
+}
 
 // Fix for default marker icons in Leaflet with bundlers
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -1236,8 +1265,7 @@ async function initMap(): Promise<void> {
           // Fetch and display the GPX route
           fetchAndParseGPX(`./gpx/${pin.gpx}`).then(coordinates => {
             if (coordinates.length > 0) {
-              const leafletCoords = toLeafletCoords(coordinates);
-              hikeRoutePolyline = L.polyline(leafletCoords, {
+              hikeRoutePolyline = L.polyline(coordinates, {
                 color: '#ff3333',
                 weight: 4,
                 opacity: 0.85,
