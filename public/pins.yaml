@@ -109,6 +109,7 @@ pins:
   description: 2.8 mi • +1309 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/flattop-mountain
+  gpx: flattop.gpx
   distance: 2.8
   elevation_gain: 1309
 - name: Crow Pass Trail To Crystal Lake And Barnes Mountain
@@ -118,6 +119,7 @@ pins:
   description: 5.5 mi • +1923 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/crow-pass-trail-to-crystal-lake-and-barnes-mountain
+  gpx: crow-pass.gpx
   distance: 5.5
   elevation_gain: 1923
 - name: Bird Ridge
@@ -127,6 +129,7 @@ pins:
   description: 4.5 mi • +3248 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/bird-ridge
+  gpx: bird-ridge.gpx
   distance: 4.5
   elevation_gain: 3248
 - name: Snowbird Glacier And Bomber Glacier Loop
@@ -136,6 +139,7 @@ pins:
   description: 15.9 mi • +5784 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/snowbird-glacier-and-bomber-glacier-loop
+  gpx: bomber-glacier.gpx
   distance: 15.9
   elevation_gain: 5784
 - name: Black Cup Coffee
@@ -219,6 +223,7 @@ pins:
   description: 2.2 mi • +393 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/byron-glacier-trail
+  gpx: byron-glacier.gpx
   distance: 2.2
   elevation_gain: 393
 - name: Kesugi Ridge Curry Ridge Trail
@@ -228,6 +233,7 @@ pins:
   description: 30.5 mi • +5980 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/kesugi-ridge-curry-ridge-trail
+  gpx: kesugi-ridge.gpx
   distance: 30.5
   elevation_gain: 5980
 - name: Alaska Wildlife Conservation Center
@@ -425,6 +431,7 @@ pins:
   description: 8.6 mi • +3234 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/harding-ice-field-trail
+  gpx: harding-icefield.gpx
   distance: 8.6
   elevation_gain: 3234
 - name: Anchorage Museum
@@ -544,6 +551,7 @@ pins:
   description: 8.8 mi • +4524 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/twin-peaks-trail
+  gpx: twin-peaks.gpx
   distance: 8.8
   elevation_gain: 4524
 - name: Rabbit Lake Trail
@@ -555,6 +563,7 @@ pins:
   link: https://www.alltrails.com/trail/us/alaska/rabbit-lake-trail
   distance: 8.8
   elevation_gain: 1555
+  gpx: rabbit-lake.gpx
 - name: Beluga Point
   coordinates:
   - 61.0067501
@@ -569,6 +578,7 @@ pins:
   description: 11.1 mi • +1528 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/south-fork-valley-trail
+  gpx: south-fork-valley.gpx
   distance: 11.1
   elevation_gain: 1528
 - name: Kincaid Park
@@ -624,6 +634,7 @@ pins:
   description: 5.5 mi • +3359 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/rainbow-peak-trail
+  gpx: rainbow-peak.gpx
   distance: 5.5
   elevation_gain: 3359
 - name: Brooks Falls Bear Viewing (Katmai)
@@ -677,3 +688,4 @@ pins:
   link: https://www.alltrails.com/trail/us/alaska/reed-lakes-trail
   distance: 8.8
   elevation_gain: 2283
+  gpx: reed-lakes.gpx

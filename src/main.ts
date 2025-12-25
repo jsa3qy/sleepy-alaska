@@ -6,6 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+import { fetchAndParseGPX, toLeafletCoords } from './gpxParser';
 
 // Fix for default marker icons in Leaflet with bundlers
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -37,6 +38,7 @@ interface Pin {
   photos?: string[];
   distance?: number;        // in miles (for hikes)
   elevation_gain?: number;  // in feet (for hikes)
+  gpx?: string;             // GPX filename for hike routes
 }
 
 interface MapConfig {
@@ -218,6 +220,9 @@ async function initMap(): Promise<void> {
 
     // Routing state
     let routingControl: L.Routing.Control | null = null;
+
+    // Hike GPX route display state
+    let hikeRoutePolyline: L.Polyline | null = null;
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
@@ -1219,6 +1224,40 @@ async function initMap(): Promise<void> {
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }
         }
+
+        // Display GPX route for hikes
+        if (pin.category === 'Hike' && pin.gpx) {
+          // Clear any existing hike route
+          if (hikeRoutePolyline) {
+            map.removeLayer(hikeRoutePolyline);
+            hikeRoutePolyline = null;
+          }
+
+          // Fetch and display the GPX route
+          fetchAndParseGPX(`./gpx/${pin.gpx}`).then(coordinates => {
+            if (coordinates.length > 0) {
+              const leafletCoords = toLeafletCoords(coordinates);
+              hikeRoutePolyline = L.polyline(leafletCoords, {
+                color: '#ff3333',
+                weight: 4,
+                opacity: 0.85,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }).addTo(map);
+
+              // Optionally fit the map to show the entire route
+              // map.fitBounds(hikeRoutePolyline.getBounds(), { padding: [50, 50] });
+            }
+          });
+        }
+      }
+    });
+
+    // Clear hike route when popup closes
+    map.on('popupclose', () => {
+      if (hikeRoutePolyline) {
+        map.removeLayer(hikeRoutePolyline);
+        hikeRoutePolyline = null;
       }
     });
 
