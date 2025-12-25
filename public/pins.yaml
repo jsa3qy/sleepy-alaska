@@ -59,7 +59,9 @@ pins:
   coordinates:
   - 61.1912903
   - -149.8736623
-  description: Anchorage's only climbing gym features 20,000 sq ft of climbing terrain with 46-foot walls, bouldering, and auto-belays for solo sessions. Gear rental available, making it beginner-friendly. Great rainy day activity.
+  description: Anchorage's only climbing gym features 20,000 sq ft of climbing terrain
+    with 46-foot walls, bouldering, and auto-belays for solo sessions. Gear rental
+    available, making it beginner-friendly. Great rainy day activity.
   category: Tourist Activity
   link: https://www.alaskarockgym.com/
   maps_link: https://maps.app.goo.gl/w6HZ54rNwnVrkAnp7
@@ -232,7 +234,9 @@ pins:
   coordinates:
   - 60.8212004
   - -148.9792242
-  description: A 200-acre non-profit sanctuary where you can see bears, moose, musk ox, wolves, and more in naturalistic enclosures. Drive or walk the 1.5-mile loop with stunning Chugach Mountain views. Great for all ages and weather conditions.
+  description: A 200-acre non-profit sanctuary where you can see bears, moose, musk
+    ox, wolves, and more in naturalistic enclosures. Drive or walk the 1.5-mile loop
+    with stunning Chugach Mountain views. Great for all ages and weather conditions.
   category: Tourist Activity
   link: https://alaskawildlife.org/
   maps_link: https://maps.app.goo.gl/EMTHBZu7Dv3UNUwX7
@@ -250,7 +254,9 @@ pins:
   coordinates:
   - 62.3211962
   - -150.1032689
-  description: Flightseeing tours over Denali with optional glacier landings in the Ruth Amphitheater. Get within 6 miles of North America's tallest peak and land on ancient ice. A bucket-list Alaska experience, weather permitting.
+  description: Flightseeing tours over Denali with optional glacier landings in the
+    Ruth Amphitheater. Get within 6 miles of North America's tallest peak and land
+    on ancient ice. A bucket-list Alaska experience, weather permitting.
   category: Tourist Activity
   link: https://www.flyk2.com/
   maps_link: https://maps.app.goo.gl/X9NHNRbDiuXsBLBr6
@@ -260,7 +266,9 @@ pins:
   coordinates:
   - 60.9176224
   - -149.6397566
-  description: One of North America's premier whitewater runs with Class IV-V rapids through three stunning canyons. All gear provided including dry suits. No experience needed, but be ready to paddle hard. Minimum age 12.
+  description: One of North America's premier whitewater runs with Class IV-V rapids
+    through three stunning canyons. All gear provided including dry suits. No experience
+    needed, but be ready to paddle hard. Minimum age 12.
   category: Tourist Activity
   link: https://flowak.com/
   maps_link: https://maps.app.goo.gl/jxaVM4MekMZZX28Q8
@@ -299,7 +307,10 @@ pins:
   coordinates:
   - 60.1042139
   - -149.441802
-  description: Guided sea kayaking in Resurrection Bay and Kenai Fjords with small groups (max 6). Half-day tours paddle the fjord coastline; full-day options include glacier views and wildlife. All gear provided including rain jackets and boots if needed.
+  description: Guided sea kayaking in Resurrection Bay and Kenai Fjords with small
+    groups (max 6). Half-day tours paddle the fjord coastline; full-day options include
+    glacier views and wildlife. All gear provided including rain jackets and boots
+    if needed.
   category: Tourist Activity
   link: https://www.kayakak.com/
   maps_link: https://maps.app.goo.gl/Q1EB17hsQfgygg6x7
@@ -309,7 +320,9 @@ pins:
   coordinates:
   - 60.0998464
   - -149.4407077
-  description: Alaska's only public aquarium and marine wildlife rescue center, featuring seals, sea lions, puffins, and octopus in habitats overlooking Resurrection Bay. Great for kids and rainy days. Also serves as a research and rehabilitation facility.
+  description: Alaska's only public aquarium and marine wildlife rescue center, featuring
+    seals, sea lions, puffins, and octopus in habitats overlooking Resurrection Bay.
+    Great for kids and rainy days. Also serves as a research and rehabilitation facility.
   category: Tourist Activity
   link: https://alaskasealife.org/
   maps_link: https://maps.app.goo.gl/4sZNZ251nFwP7VL29
@@ -334,7 +347,9 @@ pins:
   coordinates:
   - 60.7727546
   - -148.6845856
-  description: Jet ski 55 miles through Prince William Sound to Blackstone Bay's tidewater glaciers. Full dry suits, helmets with radio comms, and guides provided. Get closer to glaciers than any boat tour. Family-owned, Alaska's first jet ski tour company.
+  description: Jet ski 55 miles through Prince William Sound to Blackstone Bay's tidewater
+    glaciers. Full dry suits, helmets with radio comms, and guides provided. Get closer
+    to glaciers than any boat tour. Family-owned, Alaska's first jet ski tour company.
   category: Tourist Activity
   link: https://glacierjetskiadventures.com/
   maps_link: https://maps.app.goo.gl/FAgMULbxaesf3ASL7
@@ -358,7 +373,10 @@ pins:
   coordinates:
   - 60.9706743
   - -149.0959696
-  description: Alaska's first Nordic spa with 50,000 sq ft of outdoor hydrotherapy pools, saunas, steam rooms, and cold plunges set against Chugach Mountain views. Full-day access lets you cycle between hot and cold experiences. Adults only (18+), reservations required.
+  description: Alaska's first Nordic spa with 50,000 sq ft of outdoor hydrotherapy
+    pools, saunas, steam rooms, and cold plunges set against Chugach Mountain views.
+    Full-day access lets you cycle between hot and cold experiences. Adults only (18+),
+    reservations required.
   category: Tourist Activity
   link: https://anordicspa.com/
   maps_link: https://maps.app.goo.gl/eF3gQqoXb1Jf2NZcA
@@ -413,7 +431,9 @@ pins:
   coordinates:
   - 61.2162281
   - -149.8855791
-  description: Alaska's largest museum featuring art, history, science, and Indigenous cultures across multiple floors. Includes a planetarium and hands-on kids area. First Fridays are free 6-9pm with live music and special programming.
+  description: Alaska's largest museum featuring art, history, science, and Indigenous
+    cultures across multiple floors. Includes a planetarium and hands-on kids area.
+    First Fridays are free 6-9pm with live music and special programming.
   category: Tourist Activity
   link: https://www.anchoragemuseum.org/
   maps_link: https://maps.app.goo.gl/MbzsGV18t5qCidWu9
@@ -569,7 +589,9 @@ pins:
   coordinates:
   - 61.7900647
   - -147.9346948
-  description: Whitewater rafting on the glacial Matanuska River with stunning mountain views. Lion's Head run features Class III-IV rapids; scenic float option available for families. The silty glacier-fed water creates a unique turquoise color.
+  description: Whitewater rafting on the glacial Matanuska River with stunning mountain
+    views. Lion's Head run features Class III-IV rapids; scenic float option available
+    for families. The silty glacier-fed water creates a unique turquoise color.
   category: Tourist Activity
   link: https://www.novalaska.com/
   maps_link: https://maps.app.goo.gl/neGR4EAtrFnKNxUx5
@@ -579,7 +601,10 @@ pins:
   coordinates:
   - 59.62
   - -151.4547222
-  description: The 'Halibut Fishing Capital of the World' with dozens of charter companies operating off the spit. Half-day to full-day trips available targeting halibut, salmon, and more. Fish processing available nearby to vacuum seal and ship your catch home.
+  description: The 'Halibut Fishing Capital of the World' with dozens of charter companies
+    operating off the spit. Half-day to full-day trips available targeting halibut,
+    salmon, and more. Fish processing available nearby to vacuum seal and ship your
+    catch home.
   category: Tourist Activity
   link: https://www.alaska.org/destination/homer/fishing-charters
   maps_link: https://maps.app.goo.gl/dVMbUz853wp1UKWH8
@@ -604,8 +629,11 @@ pins:
 - name: Brooks Falls Bear Viewing (Katmai)
   coordinates:
   - 58.5545
-  - -155.7780
-  description: Watch brown bears catch salmon at the famous Brooks Falls in Katmai National Park. July is peak season when up to 50 bears gather along the river. Day trips fly from Anchorage via floatplane. Access is flight-only, making this a true wilderness experience.
+  - -155.778
+  description: Watch brown bears catch salmon at the famous Brooks Falls in Katmai
+    National Park. July is peak season when up to 50 bears gather along the river.
+    Day trips fly from Anchorage via floatplane. Access is flight-only, making this
+    a true wilderness experience.
   category: Tourist Activity
   link: https://www.nps.gov/katm/planyourvisit/brooks-camp.htm
   cost: ~$700-900 per person (day trip with flight)
@@ -614,23 +642,38 @@ pins:
   coordinates:
   - 61.5994
   - -149.1127
-  description: Historic farming town in the Mat-Su Valley, home of the Alaska State Fair in late August. Known for giant vegetables and mountain views.
+  description: Historic farming town in the Mat-Su Valley, home of the Alaska State
+    Fair in late August. Known for giant vegetables and mountain views.
   category: City
   maps_link: https://maps.app.goo.gl/3h5h5NqsV8ZR7KSWA
 - name: Valdez
   coordinates:
   - 61.1308
   - -146.3483
-  description: Stunning port town at the end of Richardson Highway, surrounded by waterfalls and glaciers. Terminus of the Trans-Alaska Pipeline and gateway to Prince William Sound.
+  description: Stunning port town at the end of Richardson Highway, surrounded by
+    waterfalls and glaciers. Terminus of the Trans-Alaska Pipeline and gateway to
+    Prince William Sound.
   category: City
   maps_link: https://maps.app.goo.gl/mJqSXrCz7s6QQZWV7
 - name: Kenai Fjords Glacier Cruise (Seward)
   coordinates:
   - 60.1047
   - -149.4421
-  description: Cruise into Kenai Fjords National Park to see tidewater glaciers calving, whales (orca and humpback), sea lions, puffins, and otters. The original Seward tour operator since 1978. Multiple trip lengths from 4-9 hours, with glacier-side dining options on longer cruises.
+  description: Cruise into Kenai Fjords National Park to see tidewater glaciers calving,
+    whales (orca and humpback), sea lions, puffins, and otters. The original Seward
+    tour operator since 1978. Multiple trip lengths from 4-9 hours, with glacier-side
+    dining options on longer cruises.
   category: Tourist Activity
   link: https://www.alaskacollection.com/day-tours/kenai-fjords-tours/
   maps_link: https://maps.app.goo.gl/MkV4t6NoDmYgtv4i7
   cost: ~$150-250+ depending on cruise length
   tips: Half day 4-5 hrs / Full day 6-9 hrs (2.5hr drive from Anchorage)
+- name: Reed Lakes Trail
+  coordinates:
+  - 61.80412
+  - -149.20281
+  description: 8.8 mi • +2283 ft elevation
+  category: Hike
+  link: https://www.alltrails.com/trail/us/alaska/reed-lakes-trail
+  distance: 8.8
+  elevation_gain: 2283
