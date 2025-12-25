@@ -601,3 +601,12 @@ pins:
   link: https://www.alltrails.com/trail/us/alaska/rainbow-peak-trail
   distance: 5.5
   elevation_gain: 3359
+- name: Brooks Falls Bear Viewing (Katmai)
+  coordinates:
+  - 58.5545
+  - -155.7780
+  description: Watch brown bears catch salmon at the famous Brooks Falls in Katmai National Park. July is peak season when up to 50 bears gather along the river. Day trips fly from Anchorage via floatplane. Access is flight-only, making this a true wilderness experience.
+  category: Tourist Activity
+  link: https://www.nps.gov/katm/planyourvisit/brooks-camp.htm
+  cost: ~$700-900 per person (day trip with flight)
+  tips: Full day trip (7-10 hours including flights)
