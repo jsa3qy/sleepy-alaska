@@ -23,14 +23,14 @@ pins:
   coordinates:
   - 64.8378
   - -147.7164
-  description: The Golden Heart City
+  description: Alaska's second-largest city, gateway to the Arctic and aurora viewing. Known as 'The Golden Heart City'
   category: City
   link: https://en.wikipedia.org/wiki/Fairbanks,_Alaska
 - name: Denali National Park
   coordinates:
   - 63.1148
   - -151.1926
-  description: Home to North America's tallest peak
+  description: 6 million acres of wilderness surrounding North America's tallest peak (20,310 ft). Single road access, limited vehicles
   category: Point of Interest
   link: https://www.nps.gov/dena/index.htm
   maps_link: https://maps.google.com/?q=63.1148,-151.1926
@@ -253,8 +253,7 @@ pins:
   coordinates:
   - 62.3209046
   - -150.1066221
-  description: Where flight tours of Denali happen, where folks fly onto glaciers
-    for climbing
+  description: Quirky mountain town and staging area for Denali climbers. Flight tours with glacier landings depart here
   category: City
   maps_link: https://maps.app.goo.gl/tKgnKKVmqZsoLacZ9
 - name: Denali Flight Tour (K2 Aviation)
@@ -285,22 +284,21 @@ pins:
   coordinates:
   - 60.918305
   - -149.6453896
-  description: small nothing town with lots of music!
+  description: Tiny historic gold rush town with surprisingly good live music scene. Population ~200
   category: City
   maps_link: https://maps.app.goo.gl/J4vNVnK7rgCUv5dm8
 - name: Homer
   coordinates:
   - 59.6480855
   - -151.5299245
-  description: Where all the charter fishing is, cute town at the end of the Kenai
-    Penninsula
+  description: Halibut fishing capital at the end of the Kenai Peninsula. Artsy vibe, great food, stunning bay views
   category: City
   maps_link: https://maps.app.goo.gl/q8WiF1EkWF6xb1yW8
 - name: Seward
   coordinates:
   - 60.1047739
   - -149.4421038
-  description: Port town with water access to Kenai Fjords National Park
+  description: Gateway to Kenai Fjords National Park. Cruise ships, glacier tours, and great seafood on the waterfront
   category: City
   maps_link: https://maps.app.goo.gl/MkV4t6NoDmYgtv4i7
 - name: Firebrand BBQ
@@ -347,7 +345,7 @@ pins:
   coordinates:
   - 60.7840533
   - -148.7681361
-  description: longest tunnel in north america, one way, it's how you get to whittier
+  description: North America's longest highway tunnel (2.5 mi). One-way traffic on schedule—check times before going!
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/P2UBsZ4uZDs5gxrJ6
 - name: Glacier JetSki Glacier Tour
@@ -366,14 +364,14 @@ pins:
   coordinates:
   - 60.9543247
   - -149.1598983
-  description: City that supports the Alyeska Ski Resort
+  description: Mountain village home to Alyeska Resort. Ski town vibes, good restaurants, and the Nordic spa
   category: City
   maps_link: https://maps.app.goo.gl/KRMe91xqvfB1mKjw6
 - name: Alyeska Resort
   coordinates:
   - 60.9620941
   - -149.0864517
-  description: biggest ski resort in AK
+  description: Alaska's largest ski resort with 1,610 acres and 2,500 ft vertical. Tram runs year-round for views
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/xPAJY5bEjUHCggXA8
 - name: Alyeska Nordic Spa
@@ -421,8 +419,7 @@ pins:
   coordinates:
   - 61.3293186
   - -149.56805
-  description: the military focused annex of Anchorage, still technically a part of
-    anchorage
+  description: Suburban community near JBER military base, technically part of Anchorage. Gateway to Eagle River Nature Center
   category: City
   maps_link: https://maps.app.goo.gl/QeX46ZEnGLUzg3Mv9
 - name: Harding Ice Field Trail
@@ -586,14 +583,14 @@ pins:
   coordinates:
   - 61.1536409
   - -150.05538
-  description: Best inner city park, running, walking, skiing, biking
+  description: 1,400-acre park on the coast with trails for running, biking, and Nordic skiing. Moose sightings common
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/zfonrxxVM3znHkfN6
 - name: Eklutna Lake
   coordinates:
   - 61.3753858
   - -149.0349587
-  description: unbelievable beaututiful lake
+  description: Stunning turquoise glacial lake with 12-mile trail along the shore. Kayak rentals available
   category: Point of Interest
   maps_link: https://maps.app.goo.gl/QgAyz83mojtXFffG7
 - name: Matanuska River Rafting
