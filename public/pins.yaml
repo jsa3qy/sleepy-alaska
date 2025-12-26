@@ -209,13 +209,14 @@ pins:
   maps_link: https://maps.app.goo.gl/wbFKr3vaoKDvJ7h8A
 - name: Pioneer Peak Trail
   coordinates:
-  - 61.45563
-  - -148.99172
+  - 61.49432
+  - -148.92778
   description: 13.1 mi • +6637 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/pioneer-peak-trail
   distance: 13.1
   elevation_gain: 6637
+  gpx: pioneer-peak.gpx
 - name: Byron Glacier Trail
   coordinates:
   - 60.77378
@@ -426,8 +427,8 @@ pins:
   maps_link: https://maps.app.goo.gl/QeX46ZEnGLUzg3Mv9
 - name: Harding Ice Field Trail
   coordinates:
-  - 60.18241
-  - -149.67043
+  - 60.18853
+  - -149.63097
   description: 8.6 mi • +3234 ft elevation
   category: Hike
   link: https://www.alltrails.com/trail/us/alaska/harding-ice-field-trail

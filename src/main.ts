@@ -93,8 +93,8 @@ function createCustomIcon(color: string): L.DivIcon {
       <div class="marker-pulse"></div>
     </div>`,
     iconSize: [30, 42],
-    iconAnchor: [15, 42],
-    popupAnchor: [0, -42],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30],
   });
 }
 
@@ -250,8 +250,32 @@ async function initMap(): Promise<void> {
     // Routing state
     let routingControl: L.Routing.Control | null = null;
 
-    // Hike GPX route display state
-    let hikeRoutePolyline: L.Polyline | null = null;
+    // Hike GPX routes - displayed when hike category is visible
+    const hikeRoutesLayer = L.layerGroup().addTo(map);
+
+    // Load all hike GPX routes (permanently shown when Hike category is visible)
+    async function updateHikeRoutes() {
+      hikeRoutesLayer.clearLayers();
+
+      // Only show routes when Hike category is active
+      if (!activeCategories.has('Hike')) return;
+
+      // Load all GPX routes for hikes that have them
+      const hikePins = config.pins.filter(pin => pin.category === 'Hike' && pin.gpx);
+
+      for (const pin of hikePins) {
+        const coordinates = await fetchAndParseGPX(`./gpx/${pin.gpx}`);
+        if (coordinates.length > 0) {
+          L.polyline(coordinates, {
+            color: '#ff3333',
+            weight: 3,
+            opacity: 0.7,
+            lineCap: 'round',
+            lineJoin: 'round'
+          }).addTo(hikeRoutesLayer);
+        }
+      }
+    }
 
     // Store markers with their data for later reference
     const markerDataMap = new Map<L.Marker, Pin>();
@@ -329,8 +353,6 @@ async function initMap(): Promise<void> {
               const passesDistanceFilter = pin.distance >= currentMinDistance && pin.distance <= currentMaxDistance;
               const passesElevationFilter = pin.elevation_gain >= currentMinElevation && pin.elevation_gain <= currentMaxElevation;
 
-              console.log(`Hike: ${pin.name}, dist: ${pin.distance} (${currentMinDistance}-${currentMaxDistance}), elev: ${pin.elevation_gain} (${currentMinElevation}-${currentMaxElevation}), passes: ${passesDistanceFilter && passesElevationFilter}`);
-
               if (!passesDistanceFilter || !passesElevationFilter) {
                 shouldAddMarker = false;
               }
@@ -347,6 +369,9 @@ async function initMap(): Promise<void> {
 
     // Initialize with all markers visible
     updateVisibleMarkers();
+
+    // Load hike GPX routes
+    updateHikeRoutes();
 
     // Start with clustering off (based on user's preference)
     let clusteringEnabled = false;
@@ -496,6 +521,11 @@ async function initMap(): Promise<void> {
       }
       updateVisibleMarkers();
       renderSidePanel(); // Update side panel when categories change
+
+      // Update hike routes when Hike category changes
+      if (categoryName === 'Hike') {
+        updateHikeRoutes();
+      }
     }
 
     // Render legend with click handlers
@@ -668,6 +698,9 @@ async function initMap(): Promise<void> {
         // Update visible markers
         updateVisibleMarkers();
 
+        // Update hike routes (show only hikes now)
+        updateHikeRoutes();
+
         // Update legend visual state
         document.querySelectorAll('.legend-item').forEach(item => {
           const category = item.getAttribute('data-category');
@@ -707,6 +740,9 @@ async function initMap(): Promise<void> {
 
         // Update visible markers
         updateVisibleMarkers();
+
+        // Update hike routes
+        updateHikeRoutes();
 
         // Update legend visual state to match restored categories
         document.querySelectorAll('.legend-item').forEach(item => {
@@ -1254,38 +1290,6 @@ async function initMap(): Promise<void> {
           }
         }
 
-        // Display GPX route for hikes
-        if (pin.category === 'Hike' && pin.gpx) {
-          // Clear any existing hike route
-          if (hikeRoutePolyline) {
-            map.removeLayer(hikeRoutePolyline);
-            hikeRoutePolyline = null;
-          }
-
-          // Fetch and display the GPX route
-          fetchAndParseGPX(`./gpx/${pin.gpx}`).then(coordinates => {
-            if (coordinates.length > 0) {
-              hikeRoutePolyline = L.polyline(coordinates, {
-                color: '#ff3333',
-                weight: 4,
-                opacity: 0.85,
-                lineCap: 'round',
-                lineJoin: 'round'
-              }).addTo(map);
-
-              // Optionally fit the map to show the entire route
-              // map.fitBounds(hikeRoutePolyline.getBounds(), { padding: [50, 50] });
-            }
-          });
-        }
-      }
-    });
-
-    // Clear hike route when popup closes
-    map.on('popupclose', () => {
-      if (hikeRoutePolyline) {
-        map.removeLayer(hikeRoutePolyline);
-        hikeRoutePolyline = null;
       }
     });
 
