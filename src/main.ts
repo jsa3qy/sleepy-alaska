@@ -1505,11 +1505,32 @@ async function init() {
   // Listen for auth state changes first (before checking session)
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session) {
+      // Clear the hash from URL after successful auth (cleaner URL)
+      if (window.location.hash.includes('access_token')) {
+        history.replaceState(null, '', window.location.pathname);
+      }
       showApp();
     } else {
       showAuth();
     }
   });
+
+  // Handle email confirmation redirect (tokens in URL hash)
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+
+  if (accessToken && refreshToken) {
+    // Exchange the tokens from the URL for a session
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (!error) {
+      // onAuthStateChange will handle showing the app
+      return;
+    }
+  }
 
   // Check if user is already logged in
   const { data: { session } } = await supabase.auth.getSession();

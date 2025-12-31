@@ -1,19 +1,113 @@
 #!/usr/bin/env python3
 """
-Add a pin to pins.yaml from a Google Maps or Apple Maps URL.
+Add a pin to Supabase from a Google Maps, Apple Maps, or AllTrails URL.
 Usage: python add-pin.py <maps-url>
+
+Requires environment variables:
+  SUPABASE_URL - Your Supabase project URL
+  SUPABASE_SERVICE_ROLE_KEY - Service role key for database access
 """
 
 import sys
 import re
+import os
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
-import yaml
 import argparse
 
 # Global flag for non-interactive mode
 NON_INTERACTIVE = False
+
+# Supabase client (initialized lazily)
+_supabase_client = None
+_categories_cache = None
+
+
+def _get_supabase():
+    """Get or create Supabase client."""
+    global _supabase_client
+
+    if _supabase_client is not None:
+        return _supabase_client
+
+    try:
+        from supabase import create_client
+
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+        if not url or not key:
+            print("Error: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables required")
+            sys.exit(1)
+
+        _supabase_client = create_client(url, key)
+        return _supabase_client
+    except ImportError:
+        print("Error: supabase package not installed. Run: pip install supabase")
+        sys.exit(1)
+
+
+def get_categories():
+    """Fetch categories from Supabase (cached)."""
+    global _categories_cache
+
+    if _categories_cache is not None:
+        return _categories_cache
+
+    supabase = _get_supabase()
+    result = supabase.table("categories").select("*").execute()
+    _categories_cache = result.data
+    return _categories_cache
+
+
+def insert_pin(pin_data):
+    """Insert a pin into Supabase."""
+    supabase = _get_supabase()
+    categories = get_categories()
+
+    # Find category ID by name
+    category_name = pin_data.pop("category")
+    category_id = None
+    for cat in categories:
+        if cat["name"].lower() == category_name.lower():
+            category_id = cat["id"]
+            break
+
+    if not category_id:
+        print(f"Error: Category '{category_name}' not found in database")
+        sys.exit(1)
+
+    # Transform to database format
+    coords = pin_data.pop("coordinates")
+    db_pin = {
+        "name": pin_data["name"],
+        "lat": coords[0],
+        "lng": coords[1],
+        "description": pin_data["description"],
+        "category_id": category_id,
+    }
+
+    # Optional fields
+    if pin_data.get("link"):
+        db_pin["link"] = pin_data["link"]
+    if pin_data.get("maps_link"):
+        db_pin["maps_link"] = pin_data["maps_link"]
+    if pin_data.get("extended_description"):
+        db_pin["extended_description"] = pin_data["extended_description"]
+    if pin_data.get("cost"):
+        db_pin["cost"] = pin_data["cost"]
+    if pin_data.get("tips"):
+        db_pin["tips"] = pin_data["tips"]
+    if pin_data.get("distance"):
+        db_pin["distance"] = pin_data["distance"]
+    if pin_data.get("elevation_gain"):
+        db_pin["elevation_gain"] = pin_data["elevation_gain"]
+    if pin_data.get("gpx"):
+        db_pin["gpx"] = pin_data["gpx"]
+
+    result = supabase.table("pins").insert(db_pin).execute()
+    return result.data
 
 
 class MapsParser(HTMLParser):
@@ -360,22 +454,6 @@ def fetch_google_maps_data(url):
     }
 
 
-def load_pins_yaml(filepath='public/pins.yaml'):
-    """Load existing pins.yaml file."""
-    try:
-        with open(filepath, 'r') as f:
-            return yaml.safe_load(f)
-    except FileNotFoundError:
-        print(f"Error: {filepath} not found")
-        sys.exit(1)
-
-
-def save_pins_yaml(data, filepath='public/pins.yaml'):
-    """Save updated pins.yaml file."""
-    with open(filepath, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-
-
 def infer_category(name, description, categories):
     """Attempt to infer category based on keywords."""
     text = f"{name} {description}".lower()
@@ -400,8 +478,8 @@ def infer_category(name, description, categories):
     return None
 
 
-def process_single_url(url, pins_data):
-    """Process a single URL and add it to the pins data."""
+def process_single_url(url):
+    """Process a single URL and add it to Supabase."""
 
     # Detect which service
     service = detect_maps_service(url)
@@ -435,8 +513,8 @@ def process_single_url(url, pins_data):
     print(f"Coordinates: {data['coordinates']}")
     print(f"Description: {data['description']}")
 
-    # Get categories from existing pins data
-    categories = pins_data.get('categories', [])
+    # Get categories from Supabase
+    categories = get_categories()
 
     # Handle AllTrails differently - category is pre-set
     if service == 'alltrails':
@@ -531,10 +609,10 @@ def process_single_url(url, pins_data):
         if learn_more_link:
             new_pin['link'] = learn_more_link
 
-    # Add to pins list
-    pins_data['pins'].append(new_pin)
+    # Insert into Supabase
+    insert_pin(new_pin)
 
-    print(f"✓ Successfully added '{data['name']}' to pins.yaml!")
+    print(f"✓ Successfully added '{data['name']}' to Supabase!")
     print(f"  Category: {category}")
     print(f"  Coordinates: {data['coordinates']}")
 
@@ -545,7 +623,7 @@ def main():
     global NON_INTERACTIVE
 
     parser = argparse.ArgumentParser(
-        description='Add a pin to pins.yaml from a Maps URL',
+        description='Add a pin to Supabase from a Maps URL',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -554,6 +632,10 @@ Examples:
   python add-pin.py urls.txt
 
 Supports: Google Maps, Apple Maps, and AllTrails URLs
+
+Required environment variables:
+  SUPABASE_URL - Your Supabase project URL
+  SUPABASE_SERVICE_ROLE_KEY - Service role key for database access
 """
     )
     parser.add_argument('url_or_file', help='URL to add or file containing URLs')
@@ -569,7 +651,6 @@ Supports: Google Maps, Apple Maps, and AllTrails URLs
         print("Running in non-interactive mode...")
 
     # Check if input is a file
-    import os
     if os.path.isfile(input_arg):
         # Batch mode - process URLs from file
         print(f"Batch mode: Reading URLs from {input_arg}\n")
@@ -583,9 +664,6 @@ Supports: Google Maps, Apple Maps, and AllTrails URLs
 
         print(f"Found {len(urls)} URL(s) to process\n")
 
-        # Load pins.yaml once at the start
-        pins_data = load_pins_yaml()
-
         success_count = 0
         for i, url in enumerate(urls, 1):
             print(f"\n{'='*60}")
@@ -593,50 +671,29 @@ Supports: Google Maps, Apple Maps, and AllTrails URLs
             print('='*60)
 
             try:
-                if process_single_url(url, pins_data):
+                if process_single_url(url):
                     success_count += 1
             except KeyboardInterrupt:
                 print("\n\nBatch processing interrupted by user.")
                 print(f"Processed {success_count}/{i} URLs successfully.")
-
-                if NON_INTERACTIVE:
-                    # In non-interactive mode, always save
-                    save_pins_yaml(pins_data)
-                    print(f"Saved {success_count} pin(s) to pins.yaml")
-                else:
-                    # Ask if they want to save what was added so far
-                    save_response = input("\nSave pins added so far? (y/n): ").strip().lower()
-                    if save_response == 'y':
-                        save_pins_yaml(pins_data)
-                        print(f"Saved {success_count} pin(s) to pins.yaml")
+                print("Note: Pins already added are saved in Supabase.")
                 sys.exit(0)
             except Exception as e:
                 print(f"\n✗ Error processing {url}: {e}")
                 if NON_INTERACTIVE:
-                    # In non-interactive mode, stop on first error
                     print("Stopping batch processing due to error in non-interactive mode")
-                    break
+                    sys.exit(1)
                 continue_response = input("Continue to next URL? (y/n): ").strip().lower()
                 if continue_response != 'y':
                     break
 
-        # Save all changes at the end
-        save_pins_yaml(pins_data)
         print(f"\n{'='*60}")
         print(f"Batch complete: {success_count}/{len(urls)} URLs processed successfully")
         print(f"{'='*60}")
 
     else:
         # Single URL mode
-        url = input_arg
-
-        # Load pins.yaml
-        pins_data = load_pins_yaml()
-
-        # Process the single URL
-        if process_single_url(url, pins_data):
-            # Save updated YAML
-            save_pins_yaml(pins_data)
+        process_single_url(input_arg)
 
 
 if __name__ == '__main__':
