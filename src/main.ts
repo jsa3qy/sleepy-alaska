@@ -1,11 +1,23 @@
 import L from 'leaflet';
 import * as yaml from 'js-yaml';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+
+// Supabase configuration - replace with your project values
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+let supabase: SupabaseClient | null = null;
+
+// Initialize Supabase if configured
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 // GPX parsing - fetches local GPX files and extracts coordinates
 async function fetchAndParseGPX(url: string): Promise<[number, number][]> {
@@ -1299,5 +1311,129 @@ async function initMap(): Promise<void> {
   }
 }
 
-// Initialize when DOM is ready
-initMap();
+// Auth UI elements
+const authScreen = document.getElementById('auth-screen')!;
+const appContainer = document.getElementById('app-container')!;
+const authForm = document.getElementById('auth-form') as HTMLFormElement;
+const authEmail = document.getElementById('auth-email') as HTMLInputElement;
+const authPassword = document.getElementById('auth-password') as HTMLInputElement;
+const authSubmit = document.getElementById('auth-submit') as HTMLButtonElement;
+const authError = document.getElementById('auth-error')!;
+const authModeText = document.getElementById('auth-mode-text')!;
+const authModeToggle = document.getElementById('auth-mode-toggle')!;
+const logoutBtn = document.getElementById('logout-btn')!;
+
+let isSignUp = false;
+let mapInitialized = false;
+
+function showApp() {
+  authScreen.classList.add('hidden');
+  appContainer.classList.remove('hidden');
+  if (!mapInitialized) {
+    initMap();
+    mapInitialized = true;
+  }
+}
+
+function showAuth() {
+  authScreen.classList.remove('hidden');
+  appContainer.classList.add('hidden');
+  // Reset form state
+  authSubmit.disabled = false;
+  authError.textContent = '';
+  authPassword.value = '';
+}
+
+// Toggle between sign in and sign up
+authModeToggle.addEventListener('click', () => {
+  isSignUp = !isSignUp;
+  if (isSignUp) {
+    authModeText.textContent = 'Already have an account?';
+    authModeToggle.textContent = 'Sign In';
+    authSubmit.textContent = 'Sign Up';
+  } else {
+    authModeText.textContent = "Don't have an account?";
+    authModeToggle.textContent = 'Sign Up';
+    authSubmit.textContent = 'Sign In';
+  }
+  authError.textContent = '';
+});
+
+// Handle form submission
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!supabase) {
+    authError.textContent = 'Auth not configured. Contact admin.';
+    return;
+  }
+
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+
+  if (!email || !password) {
+    authError.textContent = 'Please enter email and password.';
+    return;
+  }
+
+  authSubmit.disabled = true;
+  authError.textContent = '';
+
+  try {
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      authError.style.color = '#27ae60';
+      authError.textContent = 'Check your email to confirm your account!';
+      authSubmit.disabled = false;
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showApp();
+    }
+  } catch (err: any) {
+    authError.style.color = '#e74c3c';
+    authError.textContent = err.message || 'Authentication failed.';
+    authSubmit.disabled = false;
+  }
+});
+
+// Handle logout
+logoutBtn.addEventListener('click', async () => {
+  if (supabase) {
+    // Sign out from all devices/tabs to fully clear the session
+    await supabase.auth.signOut({ scope: 'global' });
+  }
+  showAuth();
+});
+
+// Initialize: check auth state
+async function init() {
+  // If Supabase is not configured, skip auth and show the app directly
+  if (!supabase) {
+    console.warn('Supabase not configured. Showing app without auth.');
+    showApp();
+    return;
+  }
+
+  // Listen for auth state changes first (before checking session)
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+      showApp();
+    } else {
+      showAuth();
+    }
+  });
+
+  // Check if user is already logged in
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session) {
+    showApp();
+  } else {
+    showAuth();
+  }
+}
+
+// Start the app
+init();

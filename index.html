@@ -1494,10 +1494,194 @@
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
     }
+
+    /* Auth Screen Styles */
+    .auth-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1a365d 0%, #2d5a87 50%, #3d7ab5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .auth-screen.hidden {
+      display: none;
+    }
+
+    .auth-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .auth-container h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      color: #1a365d;
+    }
+
+    .auth-container > p {
+      margin: 0 0 24px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .auth-form input {
+      padding: 14px 16px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .auth-form input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .auth-form button[type="submit"] {
+      padding: 14px 16px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      font-family: inherit;
+    }
+
+    .auth-form button[type="submit"]:hover {
+      background: #2980b9;
+    }
+
+    .auth-form button[type="submit"]:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .auth-error {
+      color: #e74c3c;
+      font-size: 13px;
+      margin: 4px 0 0 0;
+      min-height: 20px;
+    }
+
+    .auth-toggle {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .auth-toggle button {
+      background: none;
+      border: none;
+      color: #3498db;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 0;
+      margin-left: 4px;
+    }
+
+    .auth-toggle button:hover {
+      text-decoration: underline;
+    }
+
+    /* App container */
+    .app-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .app-container.hidden {
+      display: none;
+    }
+
+    /* Logout button */
+    .logout-btn {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      z-index: 1000;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 13px;
+      color: #e74c3c;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      background: #e74c3c;
+      color: white;
+      border-color: #e74c3c;
+    }
+
+    @media (max-width: 768px) {
+      .auth-container {
+        padding: 32px 24px;
+      }
+
+      .logout-btn {
+        bottom: max(80px, env(safe-area-inset-bottom) + 70px);
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-container">
+      <h1>🏔️ Sleepy Alaska</h1>
+      <p>Sign in to access the map</p>
+      <form id="auth-form" class="auth-form">
+        <input type="email" id="auth-email" placeholder="Email" required>
+        <input type="password" id="auth-password" placeholder="Password" required>
+        <button type="submit" id="auth-submit">Sign In</button>
+        <p class="auth-error" id="auth-error"></p>
+        <p class="auth-toggle">
+          <span id="auth-mode-text">Don't have an account?</span>
+          <button type="button" id="auth-mode-toggle">Sign Up</button>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Map App (hidden until authenticated) -->
+  <div id="app-container" class="app-container hidden">
+    <div id="map"></div>
   <div class="search-container" id="search-container">
     <input type="text" id="search-input" class="search-input" placeholder="Search locations...">
     <button class="search-clear" id="search-clear">&times;</button>
@@ -1561,6 +1745,8 @@
   <button class="panel-toggle" id="panel-toggle">
     <span>List View</span>
   </button>
+  <button class="logout-btn" id="logout-btn">Logout</button>
+  </div><!-- end app-container -->
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
