@@ -62,6 +62,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface Category {
+  id: string;
   name: string;
   color: string;
 }
@@ -91,7 +92,92 @@ interface MapConfig {
   pins: Pin[];
 }
 
+// Database row types from Supabase
+interface DbCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface DbPin {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  description: string;
+  category_id: string;
+  link: string | null;
+  maps_link: string | null;
+  extended_description: string | null;
+  cost: string | null;
+  tips: string | null;
+  photos: string[] | null;
+  distance: number | null;
+  elevation_gain: number | null;
+  gpx: string | null;
+}
+
+interface DbMapConfig {
+  center_lat: number;
+  center_lng: number;
+  zoom: number;
+}
+
 async function loadConfig(): Promise<MapConfig> {
+  // If Supabase is configured, load from database
+  if (supabase) {
+    const [categoriesRes, pinsRes, configRes] = await Promise.all([
+      supabase.from('categories').select('*'),
+      supabase.from('pins').select('*'),
+      supabase.from('map_config').select('*').limit(1).single()
+    ]);
+
+    if (categoriesRes.error) throw new Error(`Failed to load categories: ${categoriesRes.error.message}`);
+    if (pinsRes.error) throw new Error(`Failed to load pins: ${pinsRes.error.message}`);
+    if (configRes.error) throw new Error(`Failed to load map config: ${configRes.error.message}`);
+
+    const dbCategories = categoriesRes.data as DbCategory[];
+    const dbPins = pinsRes.data as DbPin[];
+    const dbConfig = configRes.data as DbMapConfig;
+
+    // Build category lookup
+    const categoryMap = new Map<string, string>();
+    dbCategories.forEach(c => categoryMap.set(c.id, c.name));
+
+    // Transform to app format
+    const categories: Category[] = dbCategories.map(c => ({
+      id: c.id,
+      name: c.name,
+      color: c.color
+    }));
+
+    const pins: Pin[] = dbPins.map(p => ({
+      name: p.name,
+      coordinates: [p.lat, p.lng] as [number, number],
+      description: p.description,
+      category: categoryMap.get(p.category_id) || 'Unknown',
+      link: p.link || undefined,
+      maps_link: p.maps_link || undefined,
+      extended_description: p.extended_description || undefined,
+      cost: p.cost || undefined,
+      tips: p.tips || undefined,
+      photos: p.photos || undefined,
+      distance: p.distance || undefined,
+      elevation_gain: p.elevation_gain || undefined,
+      gpx: p.gpx || undefined
+    }));
+
+    return {
+      map: {
+        center: [dbConfig.center_lat, dbConfig.center_lng],
+        zoom: dbConfig.zoom
+      },
+      categories,
+      pins
+    };
+  }
+
+  // Fallback to YAML file (for local dev without Supabase)
   const response = await fetch('./pins.yaml');
   const text = await response.text();
   return yaml.load(text) as MapConfig;
