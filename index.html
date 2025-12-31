@@ -318,7 +318,7 @@
       .search-container {
         top: max(12px, env(safe-area-inset-top) + 8px);
         left: max(50px, env(safe-area-inset-left) + 50px); /* Offset for zoom controls */
-        right: max(10px, env(safe-area-inset-right) + 10px);
+        right: max(110px, env(safe-area-inset-right) + 110px); /* Room for logout button + gap */
         width: auto;
         max-width: none;
       }
@@ -1619,16 +1619,15 @@
       display: none;
     }
 
-    /* Logout button */
+    /* Logout button - positioned above Driving Time */
     .logout-btn {
       position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 118px;
+      left: 16px;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      padding: 10px 20px;
+      padding: 12px 20px;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
       border: 1px solid rgba(0,0,0,0.06);
@@ -1638,13 +1637,19 @@
       font-size: 13px;
       color: #e74c3c;
       font-weight: 500;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .logout-btn:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 6px 16px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
       background: #e74c3c;
       color: white;
       border-color: #e74c3c;
+    }
+
+    .logout-btn:active {
+      transform: translateY(0);
     }
 
     @media (max-width: 768px) {
@@ -1653,9 +1658,12 @@
       }
 
       .logout-btn {
-        bottom: max(80px, env(safe-area-inset-bottom) + 70px);
-        padding: 8px 16px;
-        font-size: 12px;
+        bottom: auto;
+        left: auto;
+        top: max(12px, env(safe-area-inset-top) + 8px);
+        right: max(10px, env(safe-area-inset-right) + 10px);
+        padding: 10px 12px;
+        font-size: 16px;
       }
     }
   </style>

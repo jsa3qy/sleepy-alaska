@@ -1467,7 +1467,13 @@ authForm.addEventListener('submit', async (e) => {
 
   try {
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname,
+        },
+      });
       if (error) throw error;
       authError.style.color = '#27ae60';
       authError.textContent = 'Check your email to confirm your account!';
