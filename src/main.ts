@@ -638,6 +638,53 @@ function renderLegend(
   });
 }
 
+// Set up real-time subscriptions for vote updates
+function setupRealtimeSubscriptions(
+  onVotesChange: () => void,
+  onPollVotesChange: () => void
+): void {
+  if (!supabase) return;
+
+  // Subscribe to user_votes changes
+  supabase
+    .channel('user_votes_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'user_votes' },
+      async () => {
+        await loadVotes();
+        onVotesChange();
+      }
+    )
+    .subscribe();
+
+  // Subscribe to poll_votes changes
+  supabase
+    .channel('poll_votes_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'poll_votes' },
+      async () => {
+        await loadPolls();
+        onPollVotesChange();
+      }
+    )
+    .subscribe();
+
+  // Subscribe to polls changes (new questions added/deleted)
+  supabase
+    .channel('polls_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'polls' },
+      async () => {
+        await loadPolls();
+        onPollVotesChange();
+      }
+    )
+    .subscribe();
+}
+
 async function initMap(): Promise<void> {
   try {
     const config = await loadConfig();
@@ -1438,6 +1485,25 @@ async function initMap(): Promise<void> {
         }
       });
     });
+
+    // Set up real-time subscriptions for live vote updates
+    setupRealtimeSubscriptions(
+      // On votes change: update all marker popups and refresh outcomes tab
+      () => {
+        // Update all marker popup contents
+        markersByPinId.forEach((data) => {
+          const newContent = createPopupContent(data.pin);
+          data.cluster.setPopupContent(newContent);
+          data.normal.setPopupContent(newContent);
+        });
+        // Refresh outcomes tab if visible
+        renderOutcomesTab();
+      },
+      // On poll votes change: refresh outcomes tab
+      () => {
+        renderOutcomesTab();
+      }
+    );
 
     // Category toggle handler
     function toggleCategory(categoryName: string) {
