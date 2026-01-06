@@ -68,10 +68,13 @@ interface Category {
 }
 
 interface Pin {
+  id: string;               // Database ID for voting
   name: string;
   coordinates: [number, number];
   description: string;
   category: string;
+  region?: string;          // Region name for grouping
+  votable?: boolean;        // Override to make pin votable/non-votable
   link?: string;
   maps_link?: string;
   extended_description?: string;
@@ -123,18 +126,87 @@ interface DbMapConfig {
   zoom: number;
 }
 
+interface DbRegion {
+  id: string;
+  name: string;
+  description: string | null;
+  center_lat: number | null;
+  center_lng: number | null;
+}
+
+interface DbVote {
+  id: string;
+  user_id: string;
+  pin_id: string;
+  vote: 'highly_interested' | 'would_do_with_group' | 'want_more_info' | 'not_interested';
+  created_at: string;
+  updated_at: string;
+}
+
+// Vote tier configuration
+const VOTE_TIERS = {
+  highly_interested: { label: 'Must do!', emoji: '🔥', countsAsYes: true },
+  would_do_with_group: { label: 'I\'d join', emoji: '👍', countsAsYes: true },
+  want_more_info: { label: 'Tell me more', emoji: '🤔', countsAsYes: false },
+  not_interested: { label: 'Not for me', emoji: '👎', countsAsYes: false },
+} as const;
+
+type VoteTier = keyof typeof VOTE_TIERS;
+
+// Categories that support voting by default
+const VOTABLE_CATEGORIES = ['Tourist Activity'];
+
+// Helper to check if a pin is votable
+function isPinVotable(pin: Pin): boolean {
+  // Check override first, then category
+  if (pin.votable === true) return true;
+  if (pin.votable === false) return false;
+  return VOTABLE_CATEGORIES.includes(pin.category);
+}
+
+// Poll interfaces
+interface DbPoll {
+  id: string;
+  question: string;
+  description: string | null;
+  sort_order: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+interface DbPollVote {
+  id: string;
+  user_id: string;
+  poll_id: string;
+  vote: VoteTier;
+  created_at: string;
+  updated_at: string;
+}
+
+// Poll state
+let polls: DbPoll[] = [];
+let userPollVotes: Map<string, VoteTier> = new Map(); // pollId -> vote
+let allPollVotes: Map<string, DbPollVote[]> = new Map(); // pollId -> all votes
+
+// Admin emails (can delete polls)
+const ADMIN_EMAILS = ['jessealloy@gmail.com']; // TODO: Replace with your email
+let isAdmin = false;
+
 async function loadConfig(): Promise<MapConfig> {
   // If Supabase is configured, load from database
   if (supabase) {
-    const [categoriesRes, pinsRes, configRes] = await Promise.all([
+    const [categoriesRes, pinsRes, configRes, regionsRes] = await Promise.all([
       supabase.from('categories').select('*'),
       supabase.from('pins').select('*'),
-      supabase.from('map_config').select('*').limit(1).single()
+      supabase.from('map_config').select('*').limit(1).single(),
+      supabase.from('regions').select('*')
     ]);
 
     if (categoriesRes.error) throw new Error(`Failed to load categories: ${categoriesRes.error.message}`);
     if (pinsRes.error) throw new Error(`Failed to load pins: ${pinsRes.error.message}`);
     if (configRes.error) throw new Error(`Failed to load map config: ${configRes.error.message}`);
+    // Regions are optional - don't fail if they don't exist yet
+    const dbRegions = (regionsRes.data || []) as DbRegion[];
 
     const dbCategories = categoriesRes.data as DbCategory[];
     const dbPins = pinsRes.data as DbPin[];
@@ -144,6 +216,10 @@ async function loadConfig(): Promise<MapConfig> {
     const categoryMap = new Map<string, string>();
     dbCategories.forEach(c => categoryMap.set(c.id, c.name));
 
+    // Build region lookup
+    const regionMap = new Map<string, string>();
+    dbRegions.forEach(r => regionMap.set(r.id, r.name));
+
     // Transform to app format
     const categories: Category[] = dbCategories.map(c => ({
       id: c.id,
@@ -152,10 +228,13 @@ async function loadConfig(): Promise<MapConfig> {
     }));
 
     const pins: Pin[] = dbPins.map(p => ({
+      id: p.id,
       name: p.name,
       coordinates: [p.lat, p.lng] as [number, number],
       description: p.description,
       category: categoryMap.get(p.category_id) || 'Unknown',
+      region: (p as any).region_id ? regionMap.get((p as any).region_id) : undefined,
+      votable: (p as any).votable ?? undefined,
       link: p.link || undefined,
       maps_link: p.maps_link || undefined,
       extended_description: p.extended_description || undefined,
@@ -181,6 +260,295 @@ async function loadConfig(): Promise<MapConfig> {
   const response = await fetch('./pins.yaml');
   const text = await response.text();
   return yaml.load(text) as MapConfig;
+}
+
+// Vote management
+let currentUserId: string | null = null;
+let userVotes: Map<string, VoteTier> = new Map(); // pinId -> vote
+let allVotes: Map<string, DbVote[]> = new Map(); // pinId -> all votes
+
+async function loadVotes(): Promise<void> {
+  if (!supabase) return;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  currentUserId = user.id;
+
+  // Check if user is admin
+  isAdmin = ADMIN_EMAILS.includes(user.email || '');
+
+  // Load all votes for aggregation
+  const { data: votes, error } = await supabase
+    .from('user_votes')
+    .select('*');
+
+  if (error) {
+    console.error('Failed to load votes:', error);
+    return;
+  }
+
+  // Organize votes by pin
+  allVotes.clear();
+  userVotes.clear();
+
+  for (const vote of (votes || [])) {
+    const pinVotes = allVotes.get(vote.pin_id) || [];
+    pinVotes.push(vote);
+    allVotes.set(vote.pin_id, pinVotes);
+
+    // Track current user's votes
+    if (vote.user_id === currentUserId) {
+      userVotes.set(vote.pin_id, vote.vote as VoteTier);
+    }
+  }
+}
+
+async function submitVote(pinId: string, vote: VoteTier): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  // Upsert the vote (insert or update)
+  const { error } = await supabase
+    .from('user_votes')
+    .upsert({
+      user_id: currentUserId,
+      pin_id: pinId,
+      vote: vote,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id,pin_id'
+    });
+
+  if (error) {
+    console.error('Failed to submit vote:', error);
+    return false;
+  }
+
+  // Update local state
+  userVotes.set(pinId, vote);
+
+  // Update allVotes
+  const pinVotes = allVotes.get(pinId) || [];
+  const existingIdx = pinVotes.findIndex(v => v.user_id === currentUserId);
+  if (existingIdx >= 0) {
+    pinVotes[existingIdx].vote = vote;
+  } else {
+    pinVotes.push({
+      id: '',
+      user_id: currentUserId,
+      pin_id: pinId,
+      vote: vote,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+  }
+  allVotes.set(pinId, pinVotes);
+
+  return true;
+}
+
+async function removeVote(pinId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('user_votes')
+    .delete()
+    .eq('user_id', currentUserId)
+    .eq('pin_id', pinId);
+
+  if (error) {
+    console.error('Failed to remove vote:', error);
+    return false;
+  }
+
+  // Update local state
+  userVotes.delete(pinId);
+
+  // Update allVotes
+  const pinVotes = allVotes.get(pinId) || [];
+  const filteredVotes = pinVotes.filter(v => v.user_id !== currentUserId);
+  allVotes.set(pinId, filteredVotes);
+
+  return true;
+}
+
+// Poll functions
+async function loadPolls(): Promise<void> {
+  if (!supabase) return;
+
+  // Load polls
+  const { data: pollsData, error: pollsError } = await supabase
+    .from('polls')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (pollsError) {
+    console.error('Failed to load polls:', pollsError);
+    return;
+  }
+
+  polls = pollsData || [];
+
+  // Load all poll votes
+  const { data: votesData, error: votesError } = await supabase
+    .from('poll_votes')
+    .select('*');
+
+  if (votesError) {
+    console.error('Failed to load poll votes:', votesError);
+    return;
+  }
+
+  // Organize votes by poll
+  allPollVotes.clear();
+  userPollVotes.clear();
+
+  for (const vote of (votesData || [])) {
+    const pollVotes = allPollVotes.get(vote.poll_id) || [];
+    pollVotes.push(vote);
+    allPollVotes.set(vote.poll_id, pollVotes);
+
+    if (vote.user_id === currentUserId) {
+      userPollVotes.set(vote.poll_id, vote.vote as VoteTier);
+    }
+  }
+}
+
+async function submitPollVote(pollId: string, vote: VoteTier): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('poll_votes')
+    .upsert({
+      user_id: currentUserId,
+      poll_id: pollId,
+      vote: vote,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id,poll_id'
+    });
+
+  if (error) {
+    console.error('Failed to submit poll vote:', error);
+    return false;
+  }
+
+  // Update local state
+  userPollVotes.set(pollId, vote);
+
+  const pollVotes = allPollVotes.get(pollId) || [];
+  const existingIdx = pollVotes.findIndex(v => v.user_id === currentUserId);
+  if (existingIdx >= 0) {
+    pollVotes[existingIdx].vote = vote;
+  } else {
+    pollVotes.push({
+      id: '',
+      user_id: currentUserId,
+      poll_id: pollId,
+      vote: vote,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+  }
+  allPollVotes.set(pollId, pollVotes);
+
+  return true;
+}
+
+async function removePollVote(pollId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('poll_votes')
+    .delete()
+    .eq('user_id', currentUserId)
+    .eq('poll_id', pollId);
+
+  if (error) {
+    console.error('Failed to remove poll vote:', error);
+    return false;
+  }
+
+  userPollVotes.delete(pollId);
+
+  const pollVotes = allPollVotes.get(pollId) || [];
+  const filteredVotes = pollVotes.filter(v => v.user_id !== currentUserId);
+  allPollVotes.set(pollId, filteredVotes);
+
+  return true;
+}
+
+async function createPoll(question: string, description?: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('polls')
+    .insert({
+      question,
+      description: description || null,
+      created_by: currentUserId,
+      sort_order: polls.length + 10
+    });
+
+  if (error) {
+    console.error('Failed to create poll:', error);
+    return false;
+  }
+
+  // Reload polls
+  await loadPolls();
+  return true;
+}
+
+async function deletePoll(pollId: string): Promise<boolean> {
+  if (!supabase || !isAdmin) return false;
+
+  const { error } = await supabase
+    .from('polls')
+    .delete()
+    .eq('id', pollId);
+
+  if (error) {
+    console.error('Failed to delete poll:', error);
+    return false;
+  }
+
+  // Reload polls
+  await loadPolls();
+  return true;
+}
+
+function getPollVoteSummary(pollId: string): { positive: number; total: number; breakdown: Record<VoteTier, number> } {
+  const votes = allPollVotes.get(pollId) || [];
+  const breakdown: Record<VoteTier, number> = {
+    highly_interested: 0,
+    would_do_with_group: 0,
+    want_more_info: 0,
+    not_interested: 0
+  };
+
+  for (const vote of votes) {
+    breakdown[vote.vote as VoteTier]++;
+  }
+
+  const positive = breakdown.highly_interested + breakdown.would_do_with_group;
+  return { positive, total: votes.length, breakdown };
+}
+
+function getVoteSummary(pinId: string): { positive: number; total: number; breakdown: Record<VoteTier, number> } {
+  const votes = allVotes.get(pinId) || [];
+  const breakdown: Record<VoteTier, number> = {
+    highly_interested: 0,
+    would_do_with_group: 0,
+    want_more_info: 0,
+    not_interested: 0
+  };
+
+  for (const vote of votes) {
+    breakdown[vote.vote as VoteTier]++;
+  }
+
+  const positive = breakdown.highly_interested + breakdown.would_do_with_group;
+  return { positive, total: votes.length, breakdown };
 }
 
 function createCustomIcon(color: string): L.DivIcon {
@@ -274,6 +642,10 @@ async function initMap(): Promise<void> {
   try {
     const config = await loadConfig();
 
+    // Load votes and polls after config
+    await loadVotes();
+    await loadPolls();
+
     // Initialize map with double-tap zoom enabled for mobile
     const map = L.map('map', {
       doubleClickZoom: true,
@@ -326,6 +698,9 @@ async function initMap(): Promise<void> {
     config.categories.forEach(cat => {
       markersByCategory.set(cat.name, []);
     });
+
+    // Store markers by pin ID for popup updates
+    const markersByPinId = new Map<string, { cluster: L.Marker; normal: L.Marker; pin: Pin }>();
 
     // Create both clustered and non-clustered groups
     const clusterGroup = L.markerClusterGroup({
@@ -380,12 +755,11 @@ async function initMap(): Promise<void> {
     // Store markers by pin name for search functionality
     const pinMarkers = new Map<string, L.Marker>();
 
-    // Create all markers and organize by category
-    config.pins.forEach(pin => {
-      const color = categoryColors.get(pin.category) || '#gray';
-      const icon = createCustomIcon(color);
+    // Helper to create popup content with voting
+    function createPopupContent(pin: Pin): string {
+      const userVote = userVotes.get(pin.id);
+      const summary = getVoteSummary(pin.id);
 
-      // Create popup content
       let popupContent = `<strong>${pin.name}</strong><br>${pin.description}`;
 
       // Add cost for Tourist Activity pins
@@ -410,17 +784,55 @@ async function initMap(): Promise<void> {
         popupContent += `<br>${links.join(' • ')}`;
       }
 
+      // Only show voting for votable pins
+      if (isPinVotable(pin)) {
+        // Add vote summary if there are votes
+        if (summary.total > 0) {
+          popupContent += `<div class="popup-vote-summary">${summary.positive}/${summary.total} interested</div>`;
+        }
+
+        // Add voting buttons
+        popupContent += `<div class="popup-vote-buttons" data-pin-id="${pin.id}">`;
+        for (const [tier, config] of Object.entries(VOTE_TIERS)) {
+          const isActive = userVote === tier;
+          popupContent += `<button class="popup-vote-btn${isActive ? ' active' : ''}" data-vote="${tier}" title="${config.label}">${config.emoji}</button>`;
+        }
+        popupContent += '</div>';
+      }
+
+      return popupContent;
+    }
+
+    // Create all markers and organize by category
+    config.pins.forEach(pin => {
+      const color = categoryColors.get(pin.category) || '#gray';
+      const icon = createCustomIcon(color);
+
+      // Create popup content
+      const popupContent = createPopupContent(pin);
+
+      // Popup options - only constrain on mobile via CSS
+      const isMobile = window.innerWidth <= 768;
+      const popupOptions: L.PopupOptions = {
+        autoPan: true,
+        autoPanPadding: isMobile ? L.point(50, 50) : L.point(20, 20),
+        keepInView: isMobile
+      };
+
       // Create markers for both groups
       const clusterMarker = L.marker(pin.coordinates, { icon });
-      clusterMarker.bindPopup(popupContent);
+      clusterMarker.bindPopup(popupContent, popupOptions);
 
       const normalMarker = L.marker(pin.coordinates, { icon });
-      normalMarker.bindPopup(popupContent);
+      normalMarker.bindPopup(popupContent, popupOptions);
 
       // Store markers by category
       const categoryMarkers = markersByCategory.get(pin.category) || [];
       categoryMarkers.push({ cluster: clusterMarker, normal: normalMarker });
       markersByCategory.set(pin.category, categoryMarkers);
+
+      // Store markers by pin ID for popup updates
+      markersByPinId.set(pin.id, { cluster: clusterMarker, normal: normalMarker, pin });
 
       // Map markers to pin data (do this immediately when creating markers)
       markerDataMap.set(clusterMarker, pin);
@@ -551,6 +963,23 @@ async function initMap(): Promise<void> {
           cardHTML += '</div>';
         }
 
+        // Add voting section for votable pins
+        if (isPinVotable(pin)) {
+          const summary = getVoteSummary(pin.id);
+          const userVote = userVotes.get(pin.id);
+
+          cardHTML += '<div class="card-voting">';
+          if (summary.total > 0) {
+            cardHTML += `<div class="card-vote-summary">${summary.positive}/${summary.total} interested</div>`;
+          }
+          cardHTML += `<div class="card-vote-buttons" data-pin-id="${pin.id}">`;
+          for (const [tier, config] of Object.entries(VOTE_TIERS)) {
+            const isActive = userVote === tier;
+            cardHTML += `<button class="card-vote-btn${isActive ? ' active' : ''}" data-vote="${tier}" title="${config.label}">${config.emoji}</button>`;
+          }
+          cardHTML += '</div></div>';
+        }
+
         cardHTML += '<div class="card-actions">';
         cardHTML += '<button class="card-button card-button-primary view-on-map-btn">View on Map</button>';
         if (pin.link) {
@@ -609,6 +1038,406 @@ async function initMap(): Promise<void> {
 
     // Initial render
     renderSidePanel();
+
+    // Outcomes tab elements
+    const outcomesContent = document.getElementById('outcomes-content')!;
+    const panelTabs = document.querySelectorAll('.panel-tab');
+
+    // Render outcomes tab
+    function renderOutcomesTab() {
+      let html = '';
+
+      // ========== POLLS SECTION ==========
+      if (polls.length > 0) {
+        html += `<div class="outcomes-region polls-section">`;
+        html += `<div class="outcomes-region-header">Group Preferences</div>`;
+
+        for (const poll of polls) {
+          const summary = getPollVoteSummary(poll.id);
+          const userVote = userPollVotes.get(poll.id);
+
+          html += `
+            <div class="poll-item" data-poll-id="${poll.id}">
+              <div class="poll-info">
+                <div class="poll-question">${poll.question}</div>
+                ${poll.description ? `<div class="poll-description">${poll.description}</div>` : ''}
+                <div class="poll-breakdown">
+                  <span>🔥 ${summary.breakdown.highly_interested}</span>
+                  <span>👍 ${summary.breakdown.would_do_with_group}</span>
+                  <span>🤔 ${summary.breakdown.want_more_info}</span>
+                  <span>👎 ${summary.breakdown.not_interested}</span>
+                </div>
+              </div>
+              <div class="poll-vote-buttons" data-poll-id="${poll.id}">
+                ${Object.entries(VOTE_TIERS).map(([tier, config]) => `
+                  <button class="poll-vote-btn${userVote === tier ? ' active' : ''}" data-vote="${tier}" title="${config.label}">${config.emoji}</button>
+                `).join('')}
+              </div>
+              ${isAdmin ? `<button class="poll-delete-btn" data-poll-id="${poll.id}" title="Delete question">&times;</button>` : ''}
+            </div>
+          `;
+        }
+
+        // Add new poll button
+        html += `
+          <button class="add-poll-btn" id="add-poll-btn">+ Add a question</button>
+        `;
+
+        html += `</div>`;
+      } else {
+        // No polls yet, show add button
+        html += `
+          <div class="outcomes-region polls-section">
+            <div class="outcomes-region-header">Group Preferences</div>
+            <p style="color: #888; margin-bottom: 12px;">No questions yet.</p>
+            <button class="add-poll-btn" id="add-poll-btn">+ Add a question</button>
+          </div>
+        `;
+      }
+
+      // ========== LOCATIONS SECTION ==========
+      // Group pins by region (only votable categories)
+      const regionGroups = new Map<string, Pin[]>();
+      const noRegion: Pin[] = [];
+
+      config.pins
+        .filter(pin => isPinVotable(pin))
+        .forEach(pin => {
+          if (pin.region) {
+            const group = regionGroups.get(pin.region) || [];
+            group.push(pin);
+            regionGroups.set(pin.region, group);
+          } else {
+            noRegion.push(pin);
+          }
+        });
+
+      // Check if there's anything to show
+      const hasVotablePins = regionGroups.size > 0 || noRegion.length > 0;
+
+      if (!hasVotablePins && polls.length === 0) {
+        outcomesContent.innerHTML = `
+          <div class="outcomes-empty">
+            <div class="outcomes-empty-icon">🗳️</div>
+            <p>No votable items yet!</p>
+            <p style="font-size: 13px;">Add Tourist Activities or mark pins as votable to start collecting preferences.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render each region
+      const regionOrder = ['Anchorage Area', 'Seward Area', 'North of Anchorage', 'Kenai Peninsula'];
+
+      for (const regionName of regionOrder) {
+        const pins = regionGroups.get(regionName);
+        if (!pins || pins.length === 0) continue;
+
+        html += `<div class="outcomes-region">`;
+        html += `<div class="outcomes-region-header">${regionName}</div>`;
+
+        for (const pin of pins) {
+          const summary = getVoteSummary(pin.id);
+          const userVote = userVotes.get(pin.id);
+
+          html += `
+            <div class="outcome-item" data-pin-name="${pin.name}" data-lat="${pin.coordinates[0]}" data-lng="${pin.coordinates[1]}" data-pin-id="${pin.id}">
+              <div class="outcome-score">
+                <span class="outcome-score-num">${summary.positive}</span>
+                <span class="outcome-score-divider">/</span>
+                <span class="outcome-score-total">${summary.total}</span>
+              </div>
+              <div class="outcome-content">
+                <div class="outcome-name">${pin.name}</div>
+                <div class="outcome-vote-buttons" data-pin-id="${pin.id}">
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'highly_interested' ? ' active' : ''}" data-vote="highly_interested" title="Must do!">🔥</button>
+                    <span class="outcome-vote-count">${summary.breakdown.highly_interested}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'would_do_with_group' ? ' active' : ''}" data-vote="would_do_with_group" title="I'd join">👍</button>
+                    <span class="outcome-vote-count">${summary.breakdown.would_do_with_group}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'want_more_info' ? ' active' : ''}" data-vote="want_more_info" title="Tell me more">🤔</button>
+                    <span class="outcome-vote-count">${summary.breakdown.want_more_info}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'not_interested' ? ' active' : ''}" data-vote="not_interested" title="Not for me">👎</button>
+                    <span class="outcome-vote-count">${summary.breakdown.not_interested}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `</div>`;
+      }
+
+      // Render pins without a region
+      if (noRegion.length > 0) {
+        html += `<div class="outcomes-region">`;
+        html += `<div class="outcomes-region-header">Other Locations</div>`;
+
+        for (const pin of noRegion) {
+          const summary = getVoteSummary(pin.id);
+          const userVote = userVotes.get(pin.id);
+
+          html += `
+            <div class="outcome-item" data-pin-name="${pin.name}" data-lat="${pin.coordinates[0]}" data-lng="${pin.coordinates[1]}" data-pin-id="${pin.id}">
+              <div class="outcome-score">
+                <span class="outcome-score-num">${summary.positive}</span>
+                <span class="outcome-score-divider">/</span>
+                <span class="outcome-score-total">${summary.total}</span>
+              </div>
+              <div class="outcome-content">
+                <div class="outcome-name">${pin.name}</div>
+                <div class="outcome-vote-buttons" data-pin-id="${pin.id}">
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'highly_interested' ? ' active' : ''}" data-vote="highly_interested" title="Must do!">🔥</button>
+                    <span class="outcome-vote-count">${summary.breakdown.highly_interested}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'would_do_with_group' ? ' active' : ''}" data-vote="would_do_with_group" title="I'd join">👍</button>
+                    <span class="outcome-vote-count">${summary.breakdown.would_do_with_group}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'want_more_info' ? ' active' : ''}" data-vote="want_more_info" title="Tell me more">🤔</button>
+                    <span class="outcome-vote-count">${summary.breakdown.want_more_info}</span>
+                  </div>
+                  <div class="outcome-vote-option">
+                    <button class="outcome-vote-btn${userVote === 'not_interested' ? ' active' : ''}" data-vote="not_interested" title="Not for me">👎</button>
+                    <span class="outcome-vote-count">${summary.breakdown.not_interested}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `</div>`;
+      }
+
+      outcomesContent.innerHTML = html;
+
+      // Add click handlers to outcome items (for panning to pin)
+      outcomesContent.querySelectorAll('.outcome-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // Ignore clicks on vote buttons
+          const target = e.target as HTMLElement;
+          if (target.closest('.outcome-vote-btn')) return;
+
+          const pinName = item.getAttribute('data-pin-name');
+          const lat = parseFloat(item.getAttribute('data-lat') || '0');
+          const lng = parseFloat(item.getAttribute('data-lng') || '0');
+
+          if (pinName && lat && lng) {
+            // Find the pin to get its category
+            const pin = config.pins.find(p => p.name === pinName);
+            if (!pin) return;
+
+            // Fly to the pin
+            map.flyTo([lat, lng], 14, {
+              duration: 1.0,
+              easeLinearity: 0.25
+            });
+
+            // Find the correct marker based on clustering state
+            const markers = markersByCategory.get(pin.category) || [];
+            const markerPair = markers.find(m => {
+              const markerLatLng = m.normal.getLatLng();
+              return markerLatLng.lat === lat && markerLatLng.lng === lng;
+            });
+
+            if (markerPair) {
+              const marker = clusteringEnabled ? markerPair.cluster : markerPair.normal;
+              setTimeout(() => {
+                marker.openPopup();
+              }, 600);
+            }
+          }
+        });
+      });
+
+      // Add click handlers for poll vote buttons
+      outcomesContent.querySelectorAll('.poll-vote-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const container = btn.closest('.poll-vote-buttons');
+          if (!container) return;
+
+          const pollId = container.getAttribute('data-poll-id');
+          const vote = btn.getAttribute('data-vote') as VoteTier;
+          if (!pollId || !vote) return;
+
+          // Check if removing vote
+          const currentVote = userPollVotes.get(pollId);
+          const isRemoving = currentVote === vote;
+
+          let success: boolean;
+          if (isRemoving) {
+            success = await removePollVote(pollId);
+          } else {
+            success = await submitPollVote(pollId, vote);
+          }
+
+          if (success) {
+            renderOutcomesTab();
+          }
+        });
+      });
+
+      // Add click handlers for outcome (pin) vote buttons
+      outcomesContent.querySelectorAll('.outcome-vote-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const container = btn.closest('.outcome-vote-buttons');
+          if (!container) return;
+
+          const pinId = container.getAttribute('data-pin-id');
+          const vote = btn.getAttribute('data-vote') as VoteTier;
+          if (!pinId || !vote) return;
+
+          // Check if removing vote
+          const currentVote = userVotes.get(pinId);
+          const isRemoving = currentVote === vote;
+
+          let success: boolean;
+          if (isRemoving) {
+            success = await removeVote(pinId);
+          } else {
+            success = await submitVote(pinId, vote);
+          }
+
+          if (success) {
+            // Update popup/card vote buttons if they're showing this pin
+            document.querySelectorAll(`.popup-vote-buttons[data-pin-id="${pinId}"], .card-vote-buttons[data-pin-id="${pinId}"]`).forEach(btnContainer => {
+              btnContainer.querySelectorAll('.popup-vote-btn, .card-vote-btn').forEach(voteBtn => {
+                voteBtn.classList.remove('active');
+                if (!isRemoving && voteBtn.getAttribute('data-vote') === vote) {
+                  voteBtn.classList.add('active');
+                }
+              });
+            });
+
+            // Update the marker's stored popup content so it shows correctly when opened
+            const markerData = markersByPinId.get(pinId);
+            if (markerData) {
+              const newPopupContent = createPopupContent(markerData.pin);
+              markerData.cluster.setPopupContent(newPopupContent);
+              markerData.normal.setPopupContent(newPopupContent);
+            }
+
+            renderOutcomesTab();
+          }
+        });
+      });
+
+      // Add poll button handler
+      const addPollBtn = outcomesContent.querySelector('#add-poll-btn');
+      if (addPollBtn) {
+        addPollBtn.addEventListener('click', () => {
+          showAddPollModal();
+        });
+      }
+
+      // Delete poll button handlers (admin only)
+      outcomesContent.querySelectorAll('.poll-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pollId = btn.getAttribute('data-poll-id');
+          if (!pollId) return;
+
+          if (confirm('Delete this question? All votes will be lost.')) {
+            const success = await deletePoll(pollId);
+            if (success) {
+              renderOutcomesTab();
+            }
+          }
+        });
+      });
+    }
+
+    // Add poll modal
+    function showAddPollModal() {
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'poll-modal-overlay';
+      modal.innerHTML = `
+        <div class="poll-modal">
+          <div class="poll-modal-header">
+            <h3>Add a Question</h3>
+            <button class="poll-modal-close">&times;</button>
+          </div>
+          <div class="poll-modal-body">
+            <label>Question</label>
+            <input type="text" class="poll-input" id="poll-question-input" placeholder="e.g., Kayaking excursion">
+            <label>Description (optional)</label>
+            <input type="text" class="poll-input" id="poll-description-input" placeholder="e.g., 2-3 hour guided tour">
+          </div>
+          <div class="poll-modal-footer">
+            <button class="poll-modal-cancel">Cancel</button>
+            <button class="poll-modal-submit">Add Question</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      const closeModal = () => modal.remove();
+
+      modal.querySelector('.poll-modal-close')?.addEventListener('click', closeModal);
+      modal.querySelector('.poll-modal-cancel')?.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      modal.querySelector('.poll-modal-submit')?.addEventListener('click', async () => {
+        const questionInput = modal.querySelector('#poll-question-input') as HTMLInputElement;
+        const descriptionInput = modal.querySelector('#poll-description-input') as HTMLInputElement;
+
+        const question = questionInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        if (!question) {
+          questionInput.focus();
+          return;
+        }
+
+        const success = await createPoll(question, description);
+        if (success) {
+          closeModal();
+          renderOutcomesTab();
+        }
+      });
+
+      // Focus the input
+      setTimeout(() => {
+        (modal.querySelector('#poll-question-input') as HTMLInputElement)?.focus();
+      }, 100);
+    }
+
+    // Tab switching
+    panelTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+
+        // Update active tab
+        panelTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Show/hide content
+        if (tabName === 'locations') {
+          panelContent.style.display = '';
+          outcomesContent.style.display = 'none';
+        } else if (tabName === 'outcomes') {
+          panelContent.style.display = 'none';
+          outcomesContent.style.display = '';
+          renderOutcomesTab();
+        }
+      });
+    });
 
     // Category toggle handler
     function toggleCategory(categoryName: string) {
@@ -1388,6 +2217,100 @@ async function initMap(): Promise<void> {
           }
         }
 
+      }
+    });
+
+    // Handle vote button clicks (event delegation) - works for both popup and card buttons
+    document.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+
+      // Check if it's a popup vote button or card vote button
+      const isPopupBtn = target.classList.contains('popup-vote-btn');
+      const isCardBtn = target.classList.contains('card-vote-btn');
+
+      if (!isPopupBtn && !isCardBtn) return;
+
+      e.stopPropagation();
+
+      const container = target.closest('.popup-vote-buttons, .card-vote-buttons');
+      if (!container) return;
+
+      const pinId = container.getAttribute('data-pin-id');
+      const vote = target.getAttribute('data-vote') as VoteTier;
+
+      if (!pinId || !vote) return;
+
+      // Check if clicking on already-active vote (to remove it)
+      const currentVote = userVotes.get(pinId);
+      const isRemoving = currentVote === vote;
+
+      let success: boolean;
+      if (isRemoving) {
+        success = await removeVote(pinId);
+      } else {
+        success = await submitVote(pinId, vote);
+      }
+
+      if (success) {
+        // Update all vote buttons for this pin (both popup and cards)
+        document.querySelectorAll(`[data-pin-id="${pinId}"]`).forEach(btnContainer => {
+          btnContainer.querySelectorAll('.popup-vote-btn, .card-vote-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (!isRemoving && btn.getAttribute('data-vote') === vote) {
+              btn.classList.add('active');
+            }
+          });
+        });
+
+        // Update all vote summaries for this pin
+        const summary = getVoteSummary(pinId);
+
+        // Update popup summary
+        const popupContent = document.querySelector('.leaflet-popup-content');
+        if (popupContent) {
+          let popupSummary = popupContent.querySelector('.popup-vote-summary') as HTMLElement;
+          const popupBtnContainer = popupContent.querySelector(`.popup-vote-buttons[data-pin-id="${pinId}"]`);
+          if (popupBtnContainer) {
+            if (summary.total > 0) {
+              if (popupSummary) {
+                popupSummary.textContent = `${summary.positive}/${summary.total} interested`;
+              } else {
+                popupSummary = document.createElement('div');
+                popupSummary.className = 'popup-vote-summary';
+                popupSummary.textContent = `${summary.positive}/${summary.total} interested`;
+                popupBtnContainer.before(popupSummary);
+              }
+            } else if (popupSummary) {
+              popupSummary.remove();
+            }
+          }
+        }
+
+        // Update card summary
+        const card = document.querySelector(`.location-card[data-pin-name] .card-vote-buttons[data-pin-id="${pinId}"]`)?.closest('.location-card');
+        if (card) {
+          let cardSummary = card.querySelector('.card-vote-summary') as HTMLElement;
+          const cardVoting = card.querySelector('.card-voting');
+          if (cardVoting) {
+            if (summary.total > 0) {
+              if (cardSummary) {
+                cardSummary.textContent = `${summary.positive}/${summary.total} interested`;
+              } else {
+                cardSummary = document.createElement('div');
+                cardSummary.className = 'card-vote-summary';
+                cardSummary.textContent = `${summary.positive}/${summary.total} interested`;
+                cardVoting.prepend(cardSummary);
+              }
+            } else if (cardSummary) {
+              cardSummary.remove();
+            }
+          }
+        }
+
+        // Refresh outcomes tab if visible
+        if (typeof renderOutcomesTab === 'function') {
+          renderOutcomesTab();
+        }
       }
     });
 
