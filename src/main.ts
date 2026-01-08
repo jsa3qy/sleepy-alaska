@@ -2188,14 +2188,18 @@ async function initMap(): Promise<void> {
         drivingTimeToggle.classList.remove('active');
         mapElement.classList.remove('route-panel-open');
         clearRoute();
+
+        // Restore legend visibility when closing route panel
+        legendElement.classList.remove('hidden');
+        showLegendBtn.classList.remove('visible');
       } else {
         routePanel.classList.add('open');
         drivingTimeToggle.classList.add('active');
         mapElement.classList.add('route-panel-open');
 
-        // Hide legend when driving time panel opens
+        // Hide legend and Show Legend button when driving time panel opens
         legendElement.classList.add('hidden');
-        showLegendBtn.classList.add('visible');
+        showLegendBtn.classList.remove('visible');
 
         // Calculate route if both selections exist
         if (selectedStartPin && selectedEndPin) {
@@ -2214,6 +2218,10 @@ async function initMap(): Promise<void> {
       drivingTimeToggle.classList.remove('active');
       mapElement.classList.remove('route-panel-open');
       clearRoute();
+
+      // Restore legend visibility when closing route panel
+      legendElement.classList.remove('hidden');
+      showLegendBtn.classList.remove('visible');
 
       // Invalidate map size after transition
       setTimeout(() => {
