@@ -833,12 +833,30 @@ async function requestJoinGroup(groupId: string): Promise<boolean> {
   if (existing) {
     if (existing.status === 'pending') {
       alert('You already have a pending request for this group.');
+      return false;
     } else if (existing.status === 'denied') {
-      alert('Your previous request was denied. Contact the group admin.');
+      // Allow re-requesting - update the existing record back to pending
+      const { error } = await supabase
+        .from('group_members')
+        .update({
+          status: 'pending',
+          requested_at: new Date().toISOString(),
+          approved_at: null,
+          approved_by: null
+        })
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('Failed to re-request join:', error);
+        return false;
+      }
+
+      await loadGroups();
+      return true;
     } else {
       alert('You are already a member of this group.');
+      return false;
     }
-    return false;
   }
 
   const { error } = await supabase
@@ -1983,8 +2001,11 @@ async function initMap(): Promise<void> {
           }).join('');
         }
 
-        // Browse Groups section (groups user is not a member of)
-        const availableGroups = allGroups.filter(g => !userGroupMemberships.has(g.id));
+        // Browse Groups section (groups user is not a member of, or was denied)
+        const availableGroups = allGroups.filter(g => {
+          const membership = userGroupMemberships.get(g.id);
+          return !membership || membership.status === 'denied';
+        });
         if (availableGroups.length > 0) {
           browseHtml = availableGroups.map(group => `
             <div class="group-item" data-group-id="${group.id}">
