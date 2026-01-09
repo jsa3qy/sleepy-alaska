@@ -183,13 +183,72 @@ interface DbPollVote {
   updated_at: string;
 }
 
+// Profile interface
+interface DbProfile {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  is_site_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Group interfaces
+interface DbGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+interface DbGroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  status: 'pending' | 'approved' | 'denied';
+  requested_at: string;
+  approved_at: string | null;
+  approved_by: string | null;
+}
+
+// Profile state
+let currentProfile: DbProfile | null = null;
+let profilesCache: Map<string, DbProfile> = new Map(); // userId -> profile
+
+// Group state
+let currentGroup: DbGroup | null = null;
+let userGroups: DbGroup[] = []; // Groups the user is an approved member of
+let userGroupMemberships: Map<string, DbGroupMember> = new Map(); // groupId -> membership
+let pendingRequests: DbGroupMember[] = []; // User's pending join requests
+let allGroups: DbGroup[] = []; // All groups (for browsing)
+
+// Helper to check if user is admin of current group
+// Site admins (is_site_admin in profile) are always considered group admins
+function isGroupAdmin(): boolean {
+  if (isAdmin) return true; // Site admin = always group admin
+  if (!currentGroup) return false;
+  const membership = userGroupMemberships.get(currentGroup.id);
+  return membership?.role === 'admin' && membership?.status === 'approved';
+}
+
+// Helper to check if user can vote (is approved member of current group)
+// Site admins can vote in any group they have a membership in (even if pending)
+function canVote(): boolean {
+  if (!currentGroup) return false;
+  const membership = userGroupMemberships.get(currentGroup.id);
+  if (!membership) return false;
+  if (isAdmin) return true; // Site admin = always can vote
+  return membership?.status === 'approved';
+}
+
 // Poll state
 let polls: DbPoll[] = [];
 let userPollVotes: Map<string, VoteTier> = new Map(); // pollId -> vote
 let allPollVotes: Map<string, DbPollVote[]> = new Map(); // pollId -> all votes
 
-// Admin emails (can delete polls)
-const ADMIN_EMAILS = ['jessealloy@gmail.com']; // TODO: Replace with your email
+// Site admin status (loaded from profile)
 let isAdmin = false;
 
 async function loadConfig(): Promise<MapConfig> {
@@ -267,6 +326,149 @@ let currentUserId: string | null = null;
 let userVotes: Map<string, VoteTier> = new Map(); // pinId -> vote
 let allVotes: Map<string, DbVote[]> = new Map(); // pinId -> all votes
 
+// Load current user's profile
+async function loadProfile(): Promise<void> {
+  if (!supabase) return;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  currentUserId = user.id;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (profile) {
+    currentProfile = profile;
+    profilesCache.set(user.id, profile);
+    isAdmin = profile.is_site_admin;
+  } else {
+    // Profile doesn't exist yet (shouldn't happen with trigger, but fallback)
+    isAdmin = false;
+  }
+}
+
+// Load profiles for a list of user IDs (for display names)
+async function loadProfilesForUsers(userIds: string[]): Promise<void> {
+  if (!supabase || userIds.length === 0) return;
+
+  // Filter out already cached profiles
+  const uncachedIds = userIds.filter(id => !profilesCache.has(id));
+  if (uncachedIds.length === 0) return;
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', uncachedIds);
+
+  for (const profile of (profiles || [])) {
+    profilesCache.set(profile.id, profile);
+  }
+}
+
+// Get display name for a user (from cache)
+function getDisplayName(userId: string): string {
+  const profile = profilesCache.get(userId);
+  return profile?.display_name || profile?.email || userId.substring(0, 8) + '...';
+}
+
+// Update current user's display name
+async function updateDisplayName(newName: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ display_name: newName, updated_at: new Date().toISOString() })
+    .eq('id', currentUserId);
+
+  if (error) {
+    console.error('Failed to update display name:', error);
+    return false;
+  }
+
+  // Update local state
+  if (currentProfile) {
+    currentProfile.display_name = newName;
+    profilesCache.set(currentUserId, currentProfile);
+  }
+
+  return true;
+}
+
+// Load user's groups and set current group
+async function loadGroups(): Promise<void> {
+  if (!supabase) return;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  currentUserId = user.id;
+
+  // Load all groups (for browsing)
+  const { data: groupsData } = await supabase
+    .from('groups')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  allGroups = groupsData || [];
+
+  // Load user's memberships
+  const { data: membershipsData } = await supabase
+    .from('group_members')
+    .select('*')
+    .eq('user_id', user.id);
+
+  userGroupMemberships.clear();
+  pendingRequests = [];
+  userGroups = [];
+
+  for (const membership of (membershipsData || [])) {
+    userGroupMemberships.set(membership.group_id, membership);
+
+    if (membership.status === 'pending') {
+      pendingRequests.push(membership);
+    } else if (membership.status === 'approved') {
+      const group = allGroups.find(g => g.id === membership.group_id);
+      if (group) userGroups.push(group);
+    }
+  }
+
+  // Restore current group from localStorage or default to first group
+  const savedGroupId = localStorage.getItem('currentGroupId');
+  if (savedGroupId) {
+    const savedGroup = userGroups.find(g => g.id === savedGroupId);
+    if (savedGroup) {
+      currentGroup = savedGroup;
+    } else {
+      currentGroup = userGroups[0] || null;
+    }
+  } else {
+    currentGroup = userGroups[0] || null;
+  }
+
+  // Save current group to localStorage
+  if (currentGroup) {
+    localStorage.setItem('currentGroupId', currentGroup.id);
+  } else {
+    localStorage.removeItem('currentGroupId');
+  }
+}
+
+// Switch to a different group
+function switchGroup(groupId: string | null): void {
+  if (groupId === null) {
+    currentGroup = null;
+    localStorage.removeItem('currentGroupId');
+  } else {
+    const group = userGroups.find(g => g.id === groupId);
+    if (group) {
+      currentGroup = group;
+      localStorage.setItem('currentGroupId', groupId);
+    }
+  }
+}
+
 async function loadVotes(): Promise<void> {
   if (!supabase) return;
 
@@ -274,13 +476,18 @@ async function loadVotes(): Promise<void> {
   if (!user) return;
   currentUserId = user.id;
 
-  // Check if user is admin
-  isAdmin = ADMIN_EMAILS.includes(user.email || '');
+  // Only load votes if we have a current group
+  if (!currentGroup) {
+    allVotes.clear();
+    userVotes.clear();
+    return;
+  }
 
-  // Load all votes for aggregation
+  // Load votes for the current group only
   const { data: votes, error } = await supabase
     .from('user_votes')
-    .select('*');
+    .select('*')
+    .eq('group_id', currentGroup.id);
 
   if (error) {
     console.error('Failed to load votes:', error);
@@ -304,7 +511,7 @@ async function loadVotes(): Promise<void> {
 }
 
 async function submitVote(pinId: string, vote: VoteTier): Promise<boolean> {
-  if (!supabase || !currentUserId) return false;
+  if (!supabase || !currentUserId || !currentGroup) return false;
 
   // Upsert the vote (insert or update)
   const { error } = await supabase
@@ -312,10 +519,11 @@ async function submitVote(pinId: string, vote: VoteTier): Promise<boolean> {
     .upsert({
       user_id: currentUserId,
       pin_id: pinId,
+      group_id: currentGroup.id,
       vote: vote,
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'user_id,pin_id'
+      onConflict: 'user_id,pin_id,group_id'
     });
 
   if (error) {
@@ -347,13 +555,14 @@ async function submitVote(pinId: string, vote: VoteTier): Promise<boolean> {
 }
 
 async function removeVote(pinId: string): Promise<boolean> {
-  if (!supabase || !currentUserId) return false;
+  if (!supabase || !currentUserId || !currentGroup) return false;
 
   const { error } = await supabase
     .from('user_votes')
     .delete()
     .eq('user_id', currentUserId)
-    .eq('pin_id', pinId);
+    .eq('pin_id', pinId)
+    .eq('group_id', currentGroup.id);
 
   if (error) {
     console.error('Failed to remove vote:', error);
@@ -375,10 +584,19 @@ async function removeVote(pinId: string): Promise<boolean> {
 async function loadPolls(): Promise<void> {
   if (!supabase) return;
 
-  // Load polls
+  // Only load polls if we have a current group
+  if (!currentGroup) {
+    polls = [];
+    allPollVotes.clear();
+    userPollVotes.clear();
+    return;
+  }
+
+  // Load polls for the current group
   const { data: pollsData, error: pollsError } = await supabase
     .from('polls')
     .select('*')
+    .eq('group_id', currentGroup.id)
     .order('sort_order', { ascending: true });
 
   if (pollsError) {
@@ -388,10 +606,11 @@ async function loadPolls(): Promise<void> {
 
   polls = pollsData || [];
 
-  // Load all poll votes
+  // Load poll votes for the current group
   const { data: votesData, error: votesError } = await supabase
     .from('poll_votes')
-    .select('*');
+    .select('*')
+    .eq('group_id', currentGroup.id);
 
   if (votesError) {
     console.error('Failed to load poll votes:', votesError);
@@ -414,17 +633,18 @@ async function loadPolls(): Promise<void> {
 }
 
 async function submitPollVote(pollId: string, vote: VoteTier): Promise<boolean> {
-  if (!supabase || !currentUserId) return false;
+  if (!supabase || !currentUserId || !currentGroup) return false;
 
   const { error } = await supabase
     .from('poll_votes')
     .upsert({
       user_id: currentUserId,
       poll_id: pollId,
+      group_id: currentGroup.id,
       vote: vote,
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'user_id,poll_id'
+      onConflict: 'user_id,poll_id,group_id'
     });
 
   if (error) {
@@ -455,13 +675,14 @@ async function submitPollVote(pollId: string, vote: VoteTier): Promise<boolean> 
 }
 
 async function removePollVote(pollId: string): Promise<boolean> {
-  if (!supabase || !currentUserId) return false;
+  if (!supabase || !currentUserId || !currentGroup) return false;
 
   const { error } = await supabase
     .from('poll_votes')
     .delete()
     .eq('user_id', currentUserId)
-    .eq('poll_id', pollId);
+    .eq('poll_id', pollId)
+    .eq('group_id', currentGroup.id);
 
   if (error) {
     console.error('Failed to remove poll vote:', error);
@@ -478,13 +699,14 @@ async function removePollVote(pollId: string): Promise<boolean> {
 }
 
 async function createPoll(question: string, description?: string): Promise<boolean> {
-  if (!supabase || !currentUserId) return false;
+  if (!supabase || !currentUserId || !currentGroup) return false;
 
   const { error } = await supabase
     .from('polls')
     .insert({
       question,
       description: description || null,
+      group_id: currentGroup.id,
       created_by: currentUserId,
       sort_order: polls.length + 10
     });
@@ -500,7 +722,8 @@ async function createPoll(question: string, description?: string): Promise<boole
 }
 
 async function deletePoll(pollId: string): Promise<boolean> {
-  if (!supabase || !isAdmin) return false;
+  // Allow deletion if user is global admin or group admin
+  if (!supabase || (!isAdmin && !isGroupAdmin())) return false;
 
   const { error } = await supabase
     .from('polls')
@@ -549,6 +772,209 @@ function getVoteSummary(pinId: string): { positive: number; total: number; break
 
   const positive = breakdown.highly_interested + breakdown.would_do_with_group;
   return { positive, total: votes.length, breakdown };
+}
+
+// ========== GROUP MANAGEMENT FUNCTIONS ==========
+
+async function createGroup(name: string, description?: string): Promise<DbGroup | null> {
+  if (!supabase || !currentUserId) return null;
+
+  // Create the group
+  const { data: group, error: groupError } = await supabase
+    .from('groups')
+    .insert({
+      name,
+      description: description || null,
+      created_by: currentUserId
+    })
+    .select()
+    .single();
+
+  if (groupError || !group) {
+    console.error('Failed to create group:', groupError);
+    return null;
+  }
+
+  // Add creator as admin member
+  const { error: memberError } = await supabase
+    .from('group_members')
+    .insert({
+      group_id: group.id,
+      user_id: currentUserId,
+      role: 'admin',
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: currentUserId
+    });
+
+  if (memberError) {
+    console.error('Failed to add creator as admin:', memberError);
+    // Clean up the group if member creation failed
+    await supabase.from('groups').delete().eq('id', group.id);
+    return null;
+  }
+
+  // Reload groups
+  await loadGroups();
+  return group;
+}
+
+async function requestJoinGroup(groupId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  // Check if user already has a membership (pending, approved, or denied)
+  const { data: existing } = await supabase
+    .from('group_members')
+    .select('id, status')
+    .eq('group_id', groupId)
+    .eq('user_id', currentUserId)
+    .single();
+
+  if (existing) {
+    if (existing.status === 'pending') {
+      alert('You already have a pending request for this group.');
+    } else if (existing.status === 'denied') {
+      alert('Your previous request was denied. Contact the group admin.');
+    } else {
+      alert('You are already a member of this group.');
+    }
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('group_members')
+    .insert({
+      group_id: groupId,
+      user_id: currentUserId,
+      role: 'member',
+      status: 'pending'
+    });
+
+  if (error) {
+    console.error('Failed to request join:', error);
+    if (error.code === '23505') {
+      alert('You already have a request for this group.');
+    }
+    return false;
+  }
+
+  await loadGroups();
+  return true;
+}
+
+async function leaveGroup(groupId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('group_members')
+    .delete()
+    .eq('group_id', groupId)
+    .eq('user_id', currentUserId);
+
+  if (error) {
+    console.error('Failed to leave group:', error);
+    return false;
+  }
+
+  // If leaving current group, switch to another or null
+  if (currentGroup?.id === groupId) {
+    await loadGroups();
+    // loadGroups will set currentGroup to the first available group or null
+  } else {
+    await loadGroups();
+  }
+
+  return true;
+}
+
+async function approveJoinRequest(membershipId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('group_members')
+    .update({
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: currentUserId
+    })
+    .eq('id', membershipId);
+
+  if (error) {
+    console.error('Failed to approve request:', error);
+    return false;
+  }
+
+  return true;
+}
+
+async function denyJoinRequest(membershipId: string): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  const { error } = await supabase
+    .from('group_members')
+    .update({
+      status: 'denied'
+    })
+    .eq('id', membershipId);
+
+  if (error) {
+    console.error('Failed to deny request:', error);
+    return false;
+  }
+
+  return true;
+}
+
+async function removeMember(membershipId: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from('group_members')
+    .delete()
+    .eq('id', membershipId);
+
+  if (error) {
+    console.error('Failed to remove member:', error);
+    return false;
+  }
+
+  return true;
+}
+
+async function deleteGroup(groupId: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from('groups')
+    .delete()
+    .eq('id', groupId);
+
+  if (error) {
+    console.error('Failed to delete group:', error);
+    return false;
+  }
+
+  // Reload groups
+  await loadGroups();
+  return true;
+}
+
+async function loadGroupMembers(groupId: string): Promise<DbGroupMember[]> {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('group_members')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('status', { ascending: true })
+    .order('requested_at', { ascending: true });
+
+  if (error) {
+    console.error('Failed to load group members:', error);
+    return [];
+  }
+
+  return data || [];
 }
 
 function createCustomIcon(color: string): L.DivIcon {
@@ -689,7 +1115,9 @@ async function initMap(): Promise<void> {
   try {
     const config = await loadConfig();
 
-    // Load votes and polls after config
+    // Load profile first (sets isAdmin), then groups, votes, and polls
+    await loadProfile();
+    await loadGroups();
     await loadVotes();
     await loadPolls();
 
@@ -831,8 +1259,8 @@ async function initMap(): Promise<void> {
         popupContent += `<br>${links.join(' • ')}`;
       }
 
-      // Only show voting for votable pins
-      if (isPinVotable(pin)) {
+      // Only show voting for votable pins AND if user can vote (is in a group)
+      if (isPinVotable(pin) && canVote()) {
         // Add vote summary if there are votes
         if (summary.total > 0) {
           popupContent += `<div class="popup-vote-summary">${summary.positive}/${summary.total} interested</div>`;
@@ -1010,8 +1438,8 @@ async function initMap(): Promise<void> {
           cardHTML += '</div>';
         }
 
-        // Add voting section for votable pins
-        if (isPinVotable(pin)) {
+        // Add voting section for votable pins (only if user can vote)
+        if (isPinVotable(pin) && canVote()) {
           const summary = getVoteSummary(pin.id);
           const userVote = userVotes.get(pin.id);
 
@@ -1092,7 +1520,35 @@ async function initMap(): Promise<void> {
 
     // Render outcomes tab
     function renderOutcomesTab() {
+      // If user is not in a group, show a message
+      if (!canVote()) {
+        outcomesContent.innerHTML = `
+          <div class="outcomes-empty">
+            <div class="outcomes-empty-icon">👥</div>
+            <p>Join a group to vote!</p>
+            <p style="font-size: 13px;">You need to be part of a trip group to see and participate in voting.</p>
+            <button class="add-poll-btn" id="open-groups-btn" style="margin-top: 16px;">Manage Groups</button>
+          </div>
+        `;
+        // Add click handler for groups button
+        const groupsBtn = outcomesContent.querySelector('#open-groups-btn');
+        if (groupsBtn) {
+          groupsBtn.addEventListener('click', () => {
+            showGroupsModal();
+          });
+        }
+        return;
+      }
+
       let html = '';
+
+      // Show current group name
+      if (currentGroup) {
+        html += `<div class="outcomes-group-header">
+          <span class="outcomes-group-name">${currentGroup.name}</span>
+          <button class="outcomes-group-change" id="change-group-btn">Change</button>
+        </div>`;
+      }
 
       // ========== POLLS SECTION ==========
       if (polls.length > 0) {
@@ -1120,7 +1576,7 @@ async function initMap(): Promise<void> {
                   <button class="poll-vote-btn${userVote === tier ? ' active' : ''}" data-vote="${tier}" title="${config.label}">${config.emoji}</button>
                 `).join('')}
               </div>
-              ${isAdmin ? `<button class="poll-delete-btn" data-poll-id="${poll.id}" title="Delete question">&times;</button>` : ''}
+              ${(isAdmin || isGroupAdmin()) ? `<button class="poll-delete-btn" data-poll-id="${poll.id}" title="Delete question">&times;</button>` : ''}
             </div>
           `;
         }
@@ -1389,6 +1845,14 @@ async function initMap(): Promise<void> {
         });
       }
 
+      // Change group button handler
+      const changeGroupBtn = outcomesContent.querySelector('#change-group-btn');
+      if (changeGroupBtn) {
+        changeGroupBtn.addEventListener('click', () => {
+          showGroupsModal();
+        });
+      }
+
       // Delete poll button handlers (admin only)
       outcomesContent.querySelectorAll('.poll-delete-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
@@ -1463,6 +1927,360 @@ async function initMap(): Promise<void> {
       setTimeout(() => {
         (modal.querySelector('#poll-question-input') as HTMLInputElement)?.focus();
       }, 100);
+    }
+
+    // Groups management modal
+    async function showGroupsModal() {
+      const modal = document.createElement('div');
+      modal.className = 'poll-modal-overlay groups-modal-overlay';
+
+      async function renderModalContent() {
+        // Reload groups to get fresh data
+        await loadGroups();
+
+        let myGroupsHtml = '';
+        let pendingHtml = '';
+        let browseHtml = '';
+
+        // My Groups section
+        if (userGroups.length > 0) {
+          myGroupsHtml = userGroups.map(group => {
+            const isCurrentGroup = currentGroup?.id === group.id;
+            const membership = userGroupMemberships.get(group.id);
+            const isGroupAdminRole = membership?.role === 'admin';
+            const canManage = isGroupAdminRole || isAdmin; // Site admins can manage any group
+
+            return `
+              <div class="group-item ${isCurrentGroup ? 'current' : ''}" data-group-id="${group.id}">
+                <div class="group-item-info">
+                  <div class="group-item-name">${group.name}${isGroupAdminRole ? ' <span class="group-admin-badge">Admin</span>' : ''}${isAdmin && !isGroupAdminRole ? ' <span class="group-admin-badge">Site Admin</span>' : ''}</div>
+                  ${group.description ? `<div class="group-item-desc">${group.description}</div>` : ''}
+                </div>
+                <div class="group-item-actions">
+                  ${!isCurrentGroup ? `<button class="group-select-btn" data-group-id="${group.id}">Select</button>` : '<span class="group-current-badge">Current</span>'}
+                  ${canManage ? `<button class="group-manage-btn" data-group-id="${group.id}">Manage</button>` : ''}
+                  <button class="group-leave-btn" data-group-id="${group.id}">Leave</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          myGroupsHtml = '<p class="groups-empty">You are not a member of any groups yet.</p>';
+        }
+
+        // Pending Requests section
+        if (pendingRequests.length > 0) {
+          pendingHtml = pendingRequests.map(req => {
+            const group = allGroups.find(g => g.id === req.group_id);
+            return `
+              <div class="group-item pending">
+                <div class="group-item-info">
+                  <div class="group-item-name">${group?.name || 'Unknown Group'}</div>
+                  <div class="group-item-status">Pending approval</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Browse Groups section (groups user is not a member of)
+        const availableGroups = allGroups.filter(g => !userGroupMemberships.has(g.id));
+        if (availableGroups.length > 0) {
+          browseHtml = availableGroups.map(group => `
+            <div class="group-item" data-group-id="${group.id}">
+              <div class="group-item-info">
+                <div class="group-item-name">${group.name}</div>
+                ${group.description ? `<div class="group-item-desc">${group.description}</div>` : ''}
+              </div>
+              <div class="group-item-actions">
+                ${isAdmin ? `<button class="group-manage-btn" data-group-id="${group.id}">Manage</button>` : ''}
+                <button class="group-join-btn" data-group-id="${group.id}">Request to Join</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          browseHtml = '<p class="groups-empty">No other groups available.</p>';
+        }
+
+        modal.innerHTML = `
+          <div class="poll-modal groups-modal">
+            <div class="poll-modal-header">
+              <h3>Manage Groups</h3>
+              <button class="poll-modal-close">&times;</button>
+            </div>
+            <div class="poll-modal-body groups-modal-body">
+              <div class="groups-section">
+                <h4>My Profile</h4>
+                <div class="profile-edit-form">
+                  <label>Display Name</label>
+                  <div class="profile-edit-row">
+                    <input type="text" id="display-name-input" class="poll-input" value="${currentProfile?.display_name || ''}" placeholder="Your display name">
+                    <button class="group-select-btn" id="save-display-name-btn">Save</button>
+                  </div>
+                </div>
+              </div>
+              <div class="groups-section">
+                <h4>My Groups</h4>
+                <div class="groups-list">${myGroupsHtml}</div>
+              </div>
+              ${pendingHtml ? `
+                <div class="groups-section">
+                  <h4>Pending Requests</h4>
+                  <div class="groups-list">${pendingHtml}</div>
+                </div>
+              ` : ''}
+              <div class="groups-section">
+                <h4>Browse Groups</h4>
+                <div class="groups-list">${browseHtml}</div>
+              </div>
+              <div class="groups-section">
+                <h4>Create New Group</h4>
+                <div class="groups-create-form">
+                  <input type="text" id="new-group-name" class="poll-input" placeholder="Group name">
+                  <input type="text" id="new-group-desc" class="poll-input" placeholder="Description (optional)">
+                  <button class="poll-modal-submit" id="create-group-btn">Create Group</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Add event listeners
+        const closeModal = () => modal.remove();
+        modal.querySelector('.poll-modal-close')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+
+        // Save display name button
+        modal.querySelector('#save-display-name-btn')?.addEventListener('click', async () => {
+          const input = modal.querySelector('#display-name-input') as HTMLInputElement;
+          const newName = input.value.trim();
+          if (newName) {
+            const success = await updateDisplayName(newName);
+            if (success) {
+              alert('Display name updated!');
+            }
+          }
+        });
+
+        // Select group buttons
+        modal.querySelectorAll('.group-select-btn[data-group-id]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const groupId = btn.getAttribute('data-group-id');
+            if (groupId) {
+              switchGroup(groupId);
+              await loadVotes();
+              await loadPolls();
+              renderSidePanel();
+              renderOutcomesTab();
+              await renderModalContent();
+            }
+          });
+        });
+
+        // Leave group buttons
+        modal.querySelectorAll('.group-leave-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const groupId = btn.getAttribute('data-group-id');
+            if (groupId && confirm('Leave this group? Your votes in this group will be deleted.')) {
+              await leaveGroup(groupId);
+              await loadVotes();
+              await loadPolls();
+              renderSidePanel();
+              renderOutcomesTab();
+              await renderModalContent();
+            }
+          });
+        });
+
+        // Manage group buttons
+        modal.querySelectorAll('.group-manage-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const groupId = btn.getAttribute('data-group-id');
+            if (groupId) {
+              closeModal();
+              await showManageGroupModal(groupId);
+            }
+          });
+        });
+
+        // Request to join buttons
+        modal.querySelectorAll('.group-join-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const groupId = btn.getAttribute('data-group-id');
+            if (groupId) {
+              const success = await requestJoinGroup(groupId);
+              if (success) {
+                await renderModalContent();
+              }
+            }
+          });
+        });
+
+        // Create group button
+        modal.querySelector('#create-group-btn')?.addEventListener('click', async () => {
+          const nameInput = modal.querySelector('#new-group-name') as HTMLInputElement;
+          const descInput = modal.querySelector('#new-group-desc') as HTMLInputElement;
+          const name = nameInput.value.trim();
+          const description = descInput.value.trim();
+
+          if (!name) {
+            nameInput.focus();
+            return;
+          }
+
+          const group = await createGroup(name, description);
+          if (group) {
+            // Switch to the new group
+            switchGroup(group.id);
+            await loadVotes();
+            await loadPolls();
+            renderSidePanel();
+            renderOutcomesTab();
+            await renderModalContent();
+          }
+        });
+      }
+
+      document.body.appendChild(modal);
+      await renderModalContent();
+    }
+
+    // Manage group modal (for admins)
+    async function showManageGroupModal(groupId: string) {
+      // Site admins can manage any group, regular users only their own
+      const group = allGroups.find(g => g.id === groupId) || userGroups.find(g => g.id === groupId);
+      if (!group) return;
+
+      const modal = document.createElement('div');
+      modal.className = 'poll-modal-overlay groups-modal-overlay';
+
+      async function renderManageContent() {
+        const members = await loadGroupMembers(groupId);
+        const pendingMembers = members.filter(m => m.status === 'pending');
+        const approvedMembers = members.filter(m => m.status === 'approved');
+
+        // Load profiles for all members to show display names
+        await loadProfilesForUsers(members.map(m => m.user_id));
+
+        let pendingHtml = '';
+        if (pendingMembers.length > 0) {
+          pendingHtml = pendingMembers.map(member => `
+            <div class="member-item pending" data-member-id="${member.id}">
+              <div class="member-info">
+                <span class="member-name">${getDisplayName(member.user_id)}</span>
+                <span class="member-status">Pending</span>
+              </div>
+              <div class="member-actions">
+                <button class="member-approve-btn" data-member-id="${member.id}">Approve</button>
+                <button class="member-deny-btn" data-member-id="${member.id}">Deny</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          pendingHtml = '<p class="groups-empty">No pending requests.</p>';
+        }
+
+        let membersHtml = approvedMembers.map(member => `
+          <div class="member-item" data-member-id="${member.id}">
+            <div class="member-info">
+              <span class="member-name">${getDisplayName(member.user_id)}</span>
+              <span class="member-role ${member.role}">${member.role}</span>
+            </div>
+            ${member.user_id !== currentUserId ? `
+              <div class="member-actions">
+                <button class="member-remove-btn" data-member-id="${member.id}">Remove</button>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+
+        modal.innerHTML = `
+          <div class="poll-modal groups-modal">
+            <div class="poll-modal-header">
+              <h3>Manage: ${group!.name}</h3>
+              <button class="poll-modal-close">&times;</button>
+            </div>
+            <div class="poll-modal-body groups-modal-body">
+              <div class="groups-section">
+                <h4>Pending Requests (${pendingMembers.length})</h4>
+                <div class="members-list">${pendingHtml}</div>
+              </div>
+              <div class="groups-section">
+                <h4>Members (${approvedMembers.length})</h4>
+                <div class="members-list">${membersHtml}</div>
+              </div>
+              <div class="groups-section danger-zone">
+                <h4>Danger Zone</h4>
+                <button class="group-delete-btn" id="delete-group-btn">Delete Group</button>
+              </div>
+            </div>
+            <div class="poll-modal-footer">
+              <button class="poll-modal-cancel" id="back-to-groups-btn">Back to Groups</button>
+            </div>
+          </div>
+        `;
+
+        // Add event listeners
+        const closeModal = () => modal.remove();
+        modal.querySelector('.poll-modal-close')?.addEventListener('click', closeModal);
+
+        modal.querySelector('#back-to-groups-btn')?.addEventListener('click', () => {
+          closeModal();
+          showGroupsModal();
+        });
+
+        // Approve buttons
+        modal.querySelectorAll('.member-approve-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const memberId = btn.getAttribute('data-member-id');
+            if (memberId) {
+              await approveJoinRequest(memberId);
+              await renderManageContent();
+            }
+          });
+        });
+
+        // Deny buttons
+        modal.querySelectorAll('.member-deny-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const memberId = btn.getAttribute('data-member-id');
+            if (memberId) {
+              await denyJoinRequest(memberId);
+              await renderManageContent();
+            }
+          });
+        });
+
+        // Remove buttons
+        modal.querySelectorAll('.member-remove-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const memberId = btn.getAttribute('data-member-id');
+            if (memberId && confirm('Remove this member from the group?')) {
+              await removeMember(memberId);
+              await renderManageContent();
+            }
+          });
+        });
+
+        // Delete group button
+        modal.querySelector('#delete-group-btn')?.addEventListener('click', async () => {
+          if (confirm(`Delete "${group!.name}"? This will remove all votes and cannot be undone.`)) {
+            const success = await deleteGroup(groupId);
+            if (success) {
+              closeModal();
+              await loadVotes();
+              await loadPolls();
+              renderSidePanel();
+              renderOutcomesTab();
+            }
+          }
+        });
+      }
+
+      document.body.appendChild(modal);
+      await renderManageContent();
     }
 
     // Tab switching

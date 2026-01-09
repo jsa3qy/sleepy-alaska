@@ -1491,6 +1491,304 @@
       margin-bottom: 22px;
     }
 
+    /* Groups Modal Styles */
+    .groups-modal {
+      max-width: 500px;
+      max-height: 80vh;
+    }
+
+    .groups-modal-body {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .groups-section {
+      margin-bottom: 24px;
+    }
+
+    .groups-section h4 {
+      color: var(--text-secondary);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .groups-list, .members-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .group-item, .member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .group-item.current {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    .group-item.pending {
+      opacity: 0.7;
+    }
+
+    .group-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .group-item-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .group-item-desc, .group-item-status {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .group-item-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .group-select-btn, .group-manage-btn, .group-leave-btn, .group-join-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .group-select-btn {
+      background: var(--accent);
+      color: var(--ice);
+    }
+
+    .group-select-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .group-manage-btn {
+      background: var(--glacier-deep);
+      color: var(--text-primary);
+    }
+
+    .group-manage-btn:hover {
+      background: var(--glacier-light);
+    }
+
+    .group-leave-btn {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .group-leave-btn:hover {
+      background: var(--danger);
+      color: var(--ice);
+    }
+
+    .group-join-btn {
+      background: var(--success);
+      color: var(--ice);
+    }
+
+    .group-join-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .group-current-badge {
+      padding: 6px 12px;
+      background: var(--accent-bg);
+      color: var(--accent);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .group-admin-badge {
+      background: var(--warning-bg);
+      color: var(--warning);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .groups-empty {
+      color: var(--text-secondary);
+      font-size: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .groups-create-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .profile-edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .profile-edit-form label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .profile-edit-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .profile-edit-row .poll-input {
+      flex: 1;
+    }
+
+    .member-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .member-id {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .member-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .member-role {
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .member-role.admin {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .member-role.member {
+      background: var(--glacier-deep);
+      color: var(--text-secondary);
+    }
+
+    .member-status {
+      font-size: 12px;
+      color: var(--warning);
+    }
+
+    .member-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .member-approve-btn, .member-deny-btn, .member-remove-btn {
+      padding: 4px 10px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .member-approve-btn {
+      background: var(--success);
+      color: var(--ice);
+    }
+
+    .member-deny-btn, .member-remove-btn {
+      background: var(--danger);
+      color: var(--ice);
+    }
+
+    .danger-zone {
+      border-top: 1px solid var(--danger);
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .danger-zone h4 {
+      color: var(--danger) !important;
+    }
+
+    .group-delete-btn {
+      background: var(--danger);
+      color: var(--ice);
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .group-delete-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    /* Outcomes group header */
+    .outcomes-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--accent-bg);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+    }
+
+    .outcomes-group-name {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .outcomes-group-change {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+
+    .outcomes-group-change:hover {
+      background: var(--accent);
+      color: var(--ice);
+    }
+
     .panel-content {
       flex: 1;
       overflow-y: auto;
