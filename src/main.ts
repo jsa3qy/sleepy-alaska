@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import * as yaml from 'js-yaml';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import imageCompression from 'browser-image-compression';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
@@ -213,6 +214,18 @@ interface DbGroupMember {
   approved_by: string | null;
 }
 
+// Pin photo interface
+interface DbPinPhoto {
+  id: string;
+  pin_id: string;
+  group_id: string;
+  is_global: boolean;
+  storage_path: string;
+  uploaded_by: string | null;
+  caption: string | null;
+  created_at: string;
+}
+
 // Profile state
 let currentProfile: DbProfile | null = null;
 let profilesCache: Map<string, DbProfile> = new Map(); // userId -> profile
@@ -223,6 +236,10 @@ let userGroups: DbGroup[] = []; // Groups the user is an approved member of
 let userGroupMemberships: Map<string, DbGroupMember> = new Map(); // groupId -> membership
 let pendingRequests: DbGroupMember[] = []; // User's pending join requests
 let allGroups: DbGroup[] = []; // All groups (for browsing)
+
+// Photo state
+let pinPhotosCache: Map<string, DbPinPhoto[]> = new Map(); // pinId -> photos (visible to user)
+let pinPhotoCountsCache: Map<string, number> = new Map(); // pinId -> count of visible photos
 
 // Helper to check if user is admin of current group
 // Site admins (is_site_admin in profile) are always considered group admins
@@ -467,6 +484,8 @@ function switchGroup(groupId: string | null): void {
       localStorage.setItem('currentGroupId', groupId);
     }
   }
+  // Clear photo caches since visibility depends on current group
+  clearPhotoCaches();
 }
 
 async function loadVotes(): Promise<void> {
@@ -995,6 +1014,238 @@ async function loadGroupMembers(groupId: string): Promise<DbGroupMember[]> {
   return data || [];
 }
 
+// ===== Photo Functions =====
+
+// Get the count of visible photos for a pin (for display in popup)
+async function getPhotoCount(pinId: string): Promise<number> {
+  if (!supabase) return 0;
+
+  // Check cache first
+  if (pinPhotoCountsCache.has(pinId)) {
+    return pinPhotoCountsCache.get(pinId)!;
+  }
+
+  // Query: global photos OR photos from current group
+  let query = supabase
+    .from('pin_photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('pin_id', pinId);
+
+  if (currentGroup) {
+    query = query.or(`is_global.eq.true,group_id.eq.${currentGroup.id}`);
+  } else {
+    query = query.eq('is_global', true);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Failed to get photo count:', error);
+    return 0;
+  }
+
+  const photoCount = count || 0;
+  pinPhotoCountsCache.set(pinId, photoCount);
+  return photoCount;
+}
+
+// Load photos for a pin (called when user clicks "View Photos")
+async function loadPinPhotos(pinId: string): Promise<DbPinPhoto[]> {
+  if (!supabase) return [];
+
+  // Check cache first
+  if (pinPhotosCache.has(pinId)) {
+    return pinPhotosCache.get(pinId)!;
+  }
+
+  // Query: global photos OR photos from current group
+  let query = supabase
+    .from('pin_photos')
+    .select('*')
+    .eq('pin_id', pinId)
+    .order('created_at', { ascending: false });
+
+  if (currentGroup) {
+    query = query.or(`is_global.eq.true,group_id.eq.${currentGroup.id}`);
+  } else {
+    query = query.eq('is_global', true);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Failed to load pin photos:', error);
+    return [];
+  }
+
+  const photos = data || [];
+  pinPhotosCache.set(pinId, photos);
+  pinPhotoCountsCache.set(pinId, photos.length);
+  return photos;
+}
+
+// Get the public URL for a photo from storage
+function getPhotoUrl(storagePath: string): string {
+  if (!supabase) return '';
+  const { data } = supabase.storage.from('pin-photos').getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+// Upload result type
+type UploadResult = { success: true; photo: DbPinPhoto } | { success: false; error: string };
+
+// Max photos per pin
+const MAX_PHOTOS_PER_PIN = 25;
+
+// Compress and upload a photo
+async function uploadPhoto(
+  file: File,
+  pinId: string,
+  isGlobal: boolean,
+  caption: string | null
+): Promise<UploadResult> {
+  if (!supabase || !currentUserId || !currentGroup) {
+    return { success: false, error: 'You must be logged in and in a group to upload photos.' };
+  }
+
+  try {
+    // Check photo count limit
+    const { count, error: countError } = await supabase
+      .from('pin_photos')
+      .select('id', { count: 'exact', head: true })
+      .eq('pin_id', pinId);
+
+    if (!countError && count !== null && count >= MAX_PHOTOS_PER_PIN) {
+      return { success: false, error: `This location already has ${MAX_PHOTOS_PER_PIN} photos. Please delete some before adding more.` };
+    }
+
+    // Compress the image
+    const options = {
+      maxSizeMB: 0.5, // 500KB
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: 'image/jpeg', // Convert HEIC to JPEG
+      initialQuality: 0.8,
+      exifOrientation: undefined, // Auto-fix orientation from EXIF
+    };
+
+    let compressedFile: File;
+    try {
+      compressedFile = await imageCompression(file, options);
+    } catch (compressionError) {
+      console.error('Compression error:', compressionError);
+      return { success: false, error: 'Could not process this image. Try a different photo or screenshot it first.' };
+    }
+
+    // Generate unique filename (always .jpg since we convert to JPEG)
+    const timestamp = Date.now();
+    const storagePath = `${currentUserId}/${pinId}/${timestamp}.jpg`;
+
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from('pin-photos')
+      .upload(storagePath, compressedFile, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload photo:', uploadError);
+
+      // Check for specific error types
+      const errorMessage = uploadError.message?.toLowerCase() || '';
+      if (errorMessage.includes('quota') || errorMessage.includes('storage limit') || errorMessage.includes('insufficient')) {
+        return { success: false, error: 'Storage limit reached. The free tier (1GB) has been exceeded. Please contact the admin.' };
+      }
+      if (errorMessage.includes('too large') || errorMessage.includes('payload')) {
+        return { success: false, error: 'Photo is too large. Please try a smaller image.' };
+      }
+      if (errorMessage.includes('policy') || errorMessage.includes('permission') || errorMessage.includes('unauthorized')) {
+        return { success: false, error: 'Permission denied. Please make sure you are logged in.' };
+      }
+
+      return { success: false, error: 'Failed to upload photo. Please try again.' };
+    }
+
+    // Insert record in database
+    const { data, error: insertError } = await supabase
+      .from('pin_photos')
+      .insert({
+        pin_id: pinId,
+        group_id: currentGroup.id,
+        is_global: isGlobal,
+        storage_path: storagePath,
+        uploaded_by: currentUserId,
+        caption: caption || null,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Failed to save photo record:', insertError);
+      // Try to clean up the uploaded file
+      await supabase.storage.from('pin-photos').remove([storagePath]);
+      return { success: false, error: 'Failed to save photo details. Please try again.' };
+    }
+
+    // Invalidate cache for this pin
+    pinPhotosCache.delete(pinId);
+    pinPhotoCountsCache.delete(pinId);
+
+    return { success: true, photo: data };
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    return { success: false, error: 'An unexpected error occurred. Please try again.' };
+  }
+}
+
+// Delete a photo
+async function deletePhoto(photo: DbPinPhoto): Promise<boolean> {
+  if (!supabase || !currentUserId) return false;
+
+  // Only allow deleting own photos
+  if (photo.uploaded_by !== currentUserId && !isAdmin) {
+    return false;
+  }
+
+  try {
+    // Delete from storage
+    const { error: storageError } = await supabase.storage
+      .from('pin-photos')
+      .remove([photo.storage_path]);
+
+    if (storageError) {
+      console.error('Failed to delete photo from storage:', storageError);
+    }
+
+    // Delete record from database
+    const { error: dbError } = await supabase
+      .from('pin_photos')
+      .delete()
+      .eq('id', photo.id);
+
+    if (dbError) {
+      console.error('Failed to delete photo record:', dbError);
+      return false;
+    }
+
+    // Invalidate cache
+    pinPhotosCache.delete(photo.pin_id);
+    pinPhotoCountsCache.delete(photo.pin_id);
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting photo:', error);
+    return false;
+  }
+}
+
+// Clear photo caches (call when switching groups)
+function clearPhotoCaches(): void {
+  pinPhotosCache.clear();
+  pinPhotoCountsCache.clear();
+}
+
 function createCustomIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: 'custom-marker',
@@ -1275,6 +1526,16 @@ async function initMap(): Promise<void> {
 
       if (links.length > 0) {
         popupContent += `<br>${links.join(' • ')}`;
+      }
+
+      // Photo section (only show if user is logged in)
+      if (currentUserId) {
+        popupContent += `<div class="popup-photo-section" data-pin-id="${pin.id}">`;
+        popupContent += `<span class="popup-photo-count" data-pin-id="${pin.id}">Loading photos...</span>`;
+        if (canVote()) {
+          popupContent += `<button class="popup-add-photo-btn" data-pin-id="${pin.id}" title="Add Photo">+ Add Photo</button>`;
+        }
+        popupContent += `</div>`;
       }
 
       // Only show voting for votable pins AND if user can vote (is in a group)
@@ -2304,6 +2565,261 @@ async function initMap(): Promise<void> {
       await renderManageContent();
     }
 
+    // Photo upload modal
+    function showPhotoUploadModal(pinId: string, pinName: string) {
+      const modal = document.createElement('div');
+      modal.className = 'poll-modal-overlay photo-modal-overlay';
+
+      modal.innerHTML = `
+        <div class="poll-modal photo-modal">
+          <div class="poll-modal-header">
+            <h3>Add Photo</h3>
+            <button class="poll-modal-close">&times;</button>
+          </div>
+          <div class="poll-modal-body photo-modal-body">
+            <p class="photo-modal-pin-name">📍 ${pinName}</p>
+
+            <div class="photo-upload-form">
+              <div class="photo-preview-container" id="photo-preview-container">
+                <label class="photo-file-label" id="photo-file-label">
+                  <input type="file" id="photo-file-input" accept="image/*,.heic,.heif">
+                  <span>📷 Choose Photo</span>
+                </label>
+              </div>
+
+              <div class="photo-form-fields" id="photo-form-fields" style="display: none;">
+                <div class="photo-scope-selector">
+                  <label>
+                    <input type="radio" name="photo-scope" value="group" checked>
+                    <span>Group only (${currentGroup?.name || 'your group'})</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="photo-scope" value="global">
+                    <span>Global (visible to all users)</span>
+                  </label>
+                </div>
+
+                <input type="text" id="photo-caption" placeholder="Add a caption (optional)" maxlength="200">
+
+                <button id="photo-upload-btn" class="photo-upload-btn">Upload Photo</button>
+              </div>
+
+              <div class="photo-upload-status" id="photo-upload-status"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      function closeModal() {
+        modal.remove();
+      }
+
+      document.body.appendChild(modal);
+
+      // Event listeners
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      modal.querySelector('.poll-modal-close')?.addEventListener('click', closeModal);
+
+      const fileInput = modal.querySelector('#photo-file-input') as HTMLInputElement;
+      const previewContainer = modal.querySelector('#photo-preview-container') as HTMLElement;
+      const formFields = modal.querySelector('#photo-form-fields') as HTMLElement;
+      const uploadBtn = modal.querySelector('#photo-upload-btn') as HTMLButtonElement;
+      const statusEl = modal.querySelector('#photo-upload-status') as HTMLElement;
+      const captionInput = modal.querySelector('#photo-caption') as HTMLInputElement;
+
+      let selectedFile: File | null = null;
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+
+        selectedFile = file;
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewContainer.innerHTML = `
+            <img src="${e.target?.result}" class="photo-preview-image" alt="Preview">
+            <button class="photo-change-btn" id="photo-change-btn">Change Photo</button>
+          `;
+          formFields.style.display = 'block';
+
+          // Re-attach change button listener
+          modal.querySelector('#photo-change-btn')?.addEventListener('click', () => {
+            previewContainer.innerHTML = `
+              <label class="photo-file-label">
+                <input type="file" id="photo-file-input" accept="image/*,.heic,.heif">
+                <span>📷 Choose Photo</span>
+              </label>
+            `;
+            formFields.style.display = 'none';
+            selectedFile = null;
+
+            // Re-attach file input listener
+            const newFileInput = modal.querySelector('#photo-file-input') as HTMLInputElement;
+            newFileInput.addEventListener('change', () => {
+              const newFile = newFileInput.files?.[0];
+              if (newFile) {
+                fileInput.files = newFileInput.files;
+                fileInput.dispatchEvent(new Event('change'));
+              }
+            });
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      uploadBtn.addEventListener('click', async () => {
+        if (!selectedFile) {
+          statusEl.textContent = 'Please select a photo first';
+          return;
+        }
+
+        const isGlobal = (modal.querySelector('input[name="photo-scope"]:checked') as HTMLInputElement)?.value === 'global';
+        const caption = captionInput.value.trim() || null;
+
+        uploadBtn.disabled = true;
+        statusEl.textContent = 'Compressing and uploading...';
+
+        const result = await uploadPhoto(selectedFile, pinId, isGlobal, caption);
+
+        if (result.success) {
+          statusEl.textContent = 'Photo uploaded successfully!';
+          statusEl.style.color = 'var(--success)';
+          setTimeout(() => {
+            closeModal();
+            // Update photo count in any open popup
+            const countEl = document.querySelector(`.popup-photo-count[data-pin-id="${pinId}"]`);
+            if (countEl) {
+              getPhotoCount(pinId).then(count => {
+                countEl.innerHTML = `<button class="popup-view-photos-btn" data-pin-id="${pinId}">📷 View Photos (${count})</button>`;
+              });
+            }
+          }, 1000);
+        } else {
+          statusEl.textContent = result.error;
+          statusEl.style.color = 'var(--danger)';
+          uploadBtn.disabled = false;
+        }
+      });
+    }
+
+    // Photo viewer modal
+    async function showPhotoViewerModal(pinId: string, pinName: string) {
+      const photos = await loadPinPhotos(pinId);
+
+      if (photos.length === 0) {
+        alert('No photos found for this location.');
+        return;
+      }
+
+      let currentIndex = 0;
+
+      const modal = document.createElement('div');
+      modal.className = 'poll-modal-overlay photo-viewer-overlay';
+
+      function renderViewer() {
+        const photo = photos[currentIndex];
+        const photoUrl = getPhotoUrl(photo.storage_path);
+        const uploaderName = profilesCache.get(photo.uploaded_by || '')?.display_name || 'Unknown';
+        const date = new Date(photo.created_at).toLocaleDateString();
+        const canDelete = photo.uploaded_by === currentUserId || isAdmin;
+
+        modal.innerHTML = `
+          <div class="photo-viewer">
+            <button class="photo-viewer-close">&times;</button>
+
+            <div class="photo-viewer-header">
+              <span class="photo-viewer-title">${pinName}</span>
+              <span class="photo-viewer-counter">${currentIndex + 1} / ${photos.length}</span>
+            </div>
+
+            <div class="photo-viewer-main">
+              ${photos.length > 1 ? `<button class="photo-viewer-nav photo-viewer-prev" ${currentIndex === 0 ? 'disabled' : ''}>&lt;</button>` : ''}
+              <div class="photo-viewer-image-container">
+                <img src="${photoUrl}" class="photo-viewer-image" alt="Photo">
+              </div>
+              ${photos.length > 1 ? `<button class="photo-viewer-nav photo-viewer-next" ${currentIndex === photos.length - 1 ? 'disabled' : ''}>&gt;</button>` : ''}
+            </div>
+
+            <div class="photo-viewer-footer">
+              <div class="photo-viewer-info">
+                ${photo.caption ? `<p class="photo-viewer-caption">${photo.caption}</p>` : ''}
+                <p class="photo-viewer-meta">
+                  By ${uploaderName} • ${date}
+                  ${photo.is_global ? ' • <span class="photo-global-badge">Global</span>' : ''}
+                </p>
+              </div>
+              ${canDelete ? `<button class="photo-delete-btn" data-photo-id="${photo.id}">Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+
+        // Re-attach event listeners
+        modal.querySelector('.photo-viewer-close')?.addEventListener('click', closeModal);
+        modal.querySelector('.photo-viewer-prev')?.addEventListener('click', () => {
+          if (currentIndex > 0) {
+            currentIndex--;
+            renderViewer();
+          }
+        });
+        modal.querySelector('.photo-viewer-next')?.addEventListener('click', () => {
+          if (currentIndex < photos.length - 1) {
+            currentIndex++;
+            renderViewer();
+          }
+        });
+        modal.querySelector('.photo-delete-btn')?.addEventListener('click', async () => {
+          if (confirm('Delete this photo?')) {
+            const success = await deletePhoto(photo);
+            if (success) {
+              photos.splice(currentIndex, 1);
+              if (photos.length === 0) {
+                closeModal();
+                // Update photo count
+                const countEl = document.querySelector(`.popup-photo-count[data-pin-id="${pinId}"]`);
+                if (countEl) {
+                  countEl.textContent = 'No photos yet';
+                }
+              } else {
+                currentIndex = Math.min(currentIndex, photos.length - 1);
+                renderViewer();
+              }
+            }
+          }
+        });
+      }
+
+      function closeModal() {
+        modal.remove();
+      }
+
+      document.body.appendChild(modal);
+      renderViewer();
+
+      // Close on overlay click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // Keyboard navigation
+      const keyHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', keyHandler);
+        } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+          currentIndex--;
+          renderViewer();
+        } else if (e.key === 'ArrowRight' && currentIndex < photos.length - 1) {
+          currentIndex++;
+          renderViewer();
+        }
+      };
+      document.addEventListener('keydown', keyHandler);
+    }
+
     // Tab switching
     panelTabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -3130,6 +3646,18 @@ async function initMap(): Promise<void> {
           }
         }
 
+        // Update photo count in popup
+        const photoCountEl = document.querySelector(`.popup-photo-count[data-pin-id="${pin.id}"]`);
+        if (photoCountEl) {
+          getPhotoCount(pin.id).then(count => {
+            if (count > 0) {
+              photoCountEl.innerHTML = `<button class="popup-view-photos-btn" data-pin-id="${pin.id}">📷 View Photos (${count})</button>`;
+            } else {
+              photoCountEl.textContent = 'No photos yet';
+            }
+          });
+        }
+
       }
     });
 
@@ -3224,6 +3752,35 @@ async function initMap(): Promise<void> {
         if (typeof renderOutcomesTab === 'function') {
           renderOutcomesTab();
         }
+      }
+    });
+
+    // Handle photo button clicks (event delegation)
+    document.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+
+      // View Photos button
+      if (target.classList.contains('popup-view-photos-btn')) {
+        const pinId = target.getAttribute('data-pin-id');
+        if (pinId) {
+          const pin = config.pins.find(p => p.id === pinId);
+          if (pin) {
+            showPhotoViewerModal(pinId, pin.name);
+          }
+        }
+        return;
+      }
+
+      // Add Photo button
+      if (target.classList.contains('popup-add-photo-btn')) {
+        const pinId = target.getAttribute('data-pin-id');
+        if (pinId) {
+          const pin = config.pins.find(p => p.id === pinId);
+          if (pin) {
+            showPhotoUploadModal(pinId, pin.name);
+          }
+        }
+        return;
       }
     });
 
