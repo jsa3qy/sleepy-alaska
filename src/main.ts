@@ -17,7 +17,9 @@ let supabase: SupabaseClient | null = null;
 
 // Initialize Supabase if configured
 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: false },
+  });
 }
 
 // GPX parsing - fetches local GPX files and extracts coordinates
@@ -4009,15 +4011,15 @@ async function init() {
     return;
   }
 
+  // Parse hash parameters (detectSessionInUrl is off, so these are still intact)
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const isRecovery = hashParams.get('type') === 'recovery';
+
   // Listen for auth state changes
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      // User clicked a password reset link — show the reset form
-      showAuth('resetPassword');
-      return;
-    }
+  supabase.auth.onAuthStateChange((_event, session) => {
     if (session) {
-      // Clear the hash from URL after successful auth (cleaner URL)
       if (window.location.hash.includes('access_token')) {
         history.replaceState(null, '', window.location.pathname);
       }
@@ -4027,18 +4029,20 @@ async function init() {
     }
   });
 
-  // Handle email confirmation redirect (tokens in URL hash)
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const accessToken = hashParams.get('access_token');
-  const refreshToken = hashParams.get('refresh_token');
-
+  // Handle token redirect (email confirmation or password recovery)
   if (accessToken && refreshToken) {
     const { error } = await supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
     if (!error) {
-      // onAuthStateChange will handle the next step
+      history.replaceState(null, '', window.location.pathname);
+      if (isRecovery) {
+        // Session is active from recovery token — show reset form
+        showAuth('resetPassword');
+      } else {
+        showApp();
+      }
       return;
     }
   }
