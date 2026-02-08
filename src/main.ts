@@ -4009,24 +4009,14 @@ async function init() {
     return;
   }
 
-  // Parse hash parameters before setting up listener
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const accessToken = hashParams.get('access_token');
-  const refreshToken = hashParams.get('refresh_token');
-  const tokenType = hashParams.get('type');
-
-  // If this is a password recovery redirect, show the reset form instead of the app
-  let isRecoveryRedirect = !!(accessToken && refreshToken && tokenType === 'recovery');
-
-  // Listen for auth state changes first (before checking session)
-  supabase.auth.onAuthStateChange((_event, session) => {
+  // Listen for auth state changes
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      // User clicked a password reset link — show the reset form
+      showAuth('resetPassword');
+      return;
+    }
     if (session) {
-      if (isRecoveryRedirect) {
-        // Show reset password form instead of navigating to app
-        showAuth('resetPassword');
-        isRecoveryRedirect = false;
-        return;
-      }
       // Clear the hash from URL after successful auth (cleaner URL)
       if (window.location.hash.includes('access_token')) {
         history.replaceState(null, '', window.location.pathname);
@@ -4037,7 +4027,11 @@ async function init() {
     }
   });
 
-  // Handle token redirect (email confirmation or password recovery)
+  // Handle email confirmation redirect (tokens in URL hash)
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+
   if (accessToken && refreshToken) {
     const { error } = await supabase.auth.setSession({
       access_token: accessToken,
