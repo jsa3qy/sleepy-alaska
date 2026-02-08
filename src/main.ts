@@ -3800,9 +3800,18 @@ const authSubmit = document.getElementById('auth-submit') as HTMLButtonElement;
 const authError = document.getElementById('auth-error')!;
 const authModeText = document.getElementById('auth-mode-text')!;
 const authModeToggle = document.getElementById('auth-mode-toggle')!;
+const authForgotRow = document.getElementById('auth-forgot') as HTMLElement;
+const authForgotLink = document.getElementById('auth-forgot-link') as HTMLButtonElement;
+const authPasswordConfirm = document.getElementById('auth-password-confirm') as HTMLInputElement;
+const authSuccess = document.getElementById('auth-success') as HTMLElement;
+const authToggleRow = document.getElementById('auth-toggle-row') as HTMLElement;
+const authBackRow = document.getElementById('auth-back') as HTMLElement;
+const authBackLink = document.getElementById('auth-back-link') as HTMLButtonElement;
+const authSubtitle = document.getElementById('auth-subtitle') as HTMLElement;
 const logoutBtn = document.getElementById('logout-btn')!;
 
-let isSignUp = false;
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'resetPassword';
+let authMode: AuthMode = 'signin';
 let mapInitialized = false;
 
 function showApp() {
@@ -3814,28 +3823,82 @@ function showApp() {
   }
 }
 
-function showAuth() {
+function setAuthMode(mode: AuthMode) {
+  authMode = mode;
+  authError.textContent = '';
+  authSuccess.textContent = '';
+  authSubmit.disabled = false;
+
+  // Reset all field visibility and required state
+  authEmail.style.display = '';
+  authEmail.setAttribute('required', '');
+  authPassword.style.display = '';
+  authPassword.setAttribute('required', '');
+  authPasswordConfirm.style.display = 'none';
+  authPasswordConfirm.removeAttribute('required');
+  authForgotRow.style.display = '';
+  authToggleRow.style.display = '';
+  authBackRow.style.display = 'none';
+
+  switch (mode) {
+    case 'signin':
+      authSubtitle.textContent = 'Sign in to access the map';
+      authSubmit.textContent = 'Sign In';
+      authModeText.textContent = "Don't have an account?";
+      authModeToggle.textContent = 'Sign Up';
+      break;
+
+    case 'signup':
+      authSubtitle.textContent = 'Create your account';
+      authSubmit.textContent = 'Sign Up';
+      authModeText.textContent = 'Already have an account?';
+      authModeToggle.textContent = 'Sign In';
+      break;
+
+    case 'forgot':
+      authSubtitle.textContent = 'Enter your email to reset your password';
+      authSubmit.textContent = 'Send Reset Link';
+      authPassword.style.display = 'none';
+      authPassword.removeAttribute('required');
+      authForgotRow.style.display = 'none';
+      authToggleRow.style.display = 'none';
+      authBackRow.style.display = '';
+      break;
+
+    case 'resetPassword':
+      authSubtitle.textContent = 'Choose a new password';
+      authSubmit.textContent = 'Set New Password';
+      authEmail.style.display = 'none';
+      authEmail.removeAttribute('required');
+      authPasswordConfirm.style.display = '';
+      authPasswordConfirm.setAttribute('required', '');
+      authForgotRow.style.display = 'none';
+      authToggleRow.style.display = 'none';
+      break;
+  }
+}
+
+function showAuth(mode: AuthMode = 'signin') {
   authScreen.classList.remove('hidden');
   appContainer.classList.add('hidden');
-  // Reset form state
-  authSubmit.disabled = false;
-  authError.textContent = '';
   authPassword.value = '';
+  authPasswordConfirm.value = '';
+  setAuthMode(mode);
 }
 
 // Toggle between sign in and sign up
 authModeToggle.addEventListener('click', () => {
-  isSignUp = !isSignUp;
-  if (isSignUp) {
-    authModeText.textContent = 'Already have an account?';
-    authModeToggle.textContent = 'Sign In';
-    authSubmit.textContent = 'Sign Up';
-  } else {
-    authModeText.textContent = "Don't have an account?";
-    authModeToggle.textContent = 'Sign Up';
-    authSubmit.textContent = 'Sign In';
-  }
-  authError.textContent = '';
+  setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+});
+
+// Forgot password link
+authForgotLink.addEventListener('click', () => {
+  setAuthMode('forgot');
+});
+
+// Back to sign in
+authBackLink.addEventListener('click', () => {
+  setAuthMode('signin');
 });
 
 // Handle form submission
@@ -3849,35 +3912,80 @@ authForm.addEventListener('submit', async (e) => {
 
   const email = authEmail.value.trim();
   const password = authPassword.value;
+  const passwordConfirm = authPasswordConfirm.value;
 
-  if (!email || !password) {
-    authError.textContent = 'Please enter email and password.';
-    return;
+  // Validation per mode
+  if (authMode === 'forgot') {
+    if (!email) {
+      authError.textContent = 'Please enter your email address.';
+      return;
+    }
+  } else if (authMode === 'resetPassword') {
+    if (!password || !passwordConfirm) {
+      authError.textContent = 'Please enter and confirm your new password.';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      authError.textContent = 'Passwords do not match.';
+      return;
+    }
+    if (password.length < 6) {
+      authError.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+  } else {
+    if (!email || !password) {
+      authError.textContent = 'Please enter email and password.';
+      return;
+    }
   }
 
   authSubmit.disabled = true;
   authError.textContent = '';
+  authSuccess.textContent = '';
 
   try {
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + window.location.pathname,
-        },
-      });
-      if (error) throw error;
-      authError.style.color = '#27ae60';
-      authError.textContent = 'Check your email to confirm your account!';
-      authSubmit.disabled = false;
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      showApp();
+    switch (authMode) {
+      case 'signup': {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + window.location.pathname,
+          },
+        });
+        if (error) throw error;
+        authSuccess.textContent = 'Check your email to confirm your account!';
+        authSubmit.disabled = false;
+        break;
+      }
+
+      case 'signin': {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        showApp();
+        break;
+      }
+
+      case 'forgot': {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname,
+        });
+        if (error) throw error;
+        authSuccess.textContent = 'Password reset link sent! Check your email.';
+        authSubmit.disabled = false;
+        break;
+      }
+
+      case 'resetPassword': {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        history.replaceState(null, '', window.location.pathname);
+        showApp();
+        break;
+      }
     }
   } catch (err: any) {
-    authError.style.color = '#e74c3c';
     authError.textContent = err.message || 'Authentication failed.';
     authSubmit.disabled = false;
   }
@@ -3901,9 +4009,24 @@ async function init() {
     return;
   }
 
+  // Parse hash parameters before setting up listener
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const tokenType = hashParams.get('type');
+
+  // If this is a password recovery redirect, show the reset form instead of the app
+  let isRecoveryRedirect = !!(accessToken && refreshToken && tokenType === 'recovery');
+
   // Listen for auth state changes first (before checking session)
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session) {
+      if (isRecoveryRedirect) {
+        // Show reset password form instead of navigating to app
+        showAuth('resetPassword');
+        isRecoveryRedirect = false;
+        return;
+      }
       // Clear the hash from URL after successful auth (cleaner URL)
       if (window.location.hash.includes('access_token')) {
         history.replaceState(null, '', window.location.pathname);
@@ -3914,19 +4037,14 @@ async function init() {
     }
   });
 
-  // Handle email confirmation redirect (tokens in URL hash)
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const accessToken = hashParams.get('access_token');
-  const refreshToken = hashParams.get('refresh_token');
-
+  // Handle token redirect (email confirmation or password recovery)
   if (accessToken && refreshToken) {
-    // Exchange the tokens from the URL for a session
     const { error } = await supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
     if (!error) {
-      // onAuthStateChange will handle showing the app
+      // onAuthStateChange will handle the next step
       return;
     }
   }

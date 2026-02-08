@@ -3030,6 +3030,61 @@
       text-decoration: underline;
     }
 
+    /* Forgot password link */
+    .auth-forgot {
+      text-align: right;
+      margin: -6px 0 0 0;
+    }
+
+    .auth-forgot button {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s var(--ease-out);
+    }
+
+    .auth-forgot button:hover {
+      color: var(--accent-dark);
+      text-decoration: underline;
+    }
+
+    /* Success message */
+    .auth-success {
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 500;
+      margin: 6px 0 0 0;
+      min-height: 0;
+    }
+
+    /* Back to sign in link */
+    .auth-back {
+      margin-top: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .auth-back button {
+      background: none;
+      border: none;
+      color: var(--accent-dark);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 0;
+      transition: color 0.2s var(--ease-out);
+    }
+
+    .auth-back button:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
     /* App container */
     .app-container {
       width: 100%;
@@ -3094,15 +3149,23 @@
   <div id="auth-screen" class="auth-screen">
     <div class="auth-container">
       <h1>🏔️ Sleepy Alaska</h1>
-      <p>Sign in to access the map</p>
+      <p id="auth-subtitle">Sign in to access the map</p>
       <form id="auth-form" class="auth-form">
         <input type="email" id="auth-email" placeholder="Email" required>
         <input type="password" id="auth-password" placeholder="Password" required>
+        <input type="password" id="auth-password-confirm" placeholder="Confirm password" style="display:none;">
         <button type="submit" id="auth-submit">Sign In</button>
+        <p class="auth-forgot" id="auth-forgot">
+          <button type="button" id="auth-forgot-link">Forgot password?</button>
+        </p>
         <p class="auth-error" id="auth-error"></p>
-        <p class="auth-toggle">
+        <p class="auth-success" id="auth-success"></p>
+        <p class="auth-toggle" id="auth-toggle-row">
           <span id="auth-mode-text">Don't have an account?</span>
           <button type="button" id="auth-mode-toggle">Sign Up</button>
+        </p>
+        <p class="auth-back" id="auth-back" style="display:none;">
+          <button type="button" id="auth-back-link">&larr; Back to Sign In</button>
         </p>
       </form>
     </div>
